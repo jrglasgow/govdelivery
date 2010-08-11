@@ -462,7 +462,7 @@ function govdelivery_queue_report() {
   	$queuedmessage->data = govdelivery_queue_get($queuedmessage->cid);	   
 		// Build the row.
 		if($queuedmessage->data != 0) {
-	  	$rows[] = array(l($queuedmessage->data['subject'], 'govdelivery_details/' . $queuedmessage->cid), $queuedmessage->day, $queuedmessage->data['id'],);
+	  	$rows[] = array(l($queuedmessage->data['subject'], 'govdelivery_details/' . $queuedmessage->cid), $queuedmessage->day, check_plain($queuedmessage->data['id']),);
 		}
   }// End while.
 
@@ -492,16 +492,16 @@ function govdelivery_details($cid) {
 		  );
 		  // Setup the rows.
 	  	$rows=array(
-		  	array('CID', $cid),
-		  	array('ID', $queuedmessage['id'],),
-	  		array('To', $queuedmessage['to'],),
-	  		array('Errors-To', $queuedmessage['headers']['Errors-To'],),
-	  		array('Return-Path', $queuedmessage['headers']['Return-Path'],),
-	  		array('Sender', $queuedmessage['headers']['Sender'],),
-	  		array('Language', $queuedmessage['language'],),
-	  		array('Parameters', $queuedmessage['params'],),
-	  		array('Subject', $queuedmessage['subject'],),
-				array('Body', $queuedmessage['body'],),
+			array('CID', check_plain($cid),),
+		  	array('ID', check_plain($queuedmessage['id']),),
+	  		array('To', check_plain($queuedmessage['to']),),
+	  		array('Errors-To', check_plain($queuedmessage['headers']['Errors-To']),),
+	  		array('Return-Path', check_plain($queuedmessage['headers']['Return-Path']),),
+	  		array('Sender', check_plain($queuedmessage['headers']['Sender']),),
+	  		array('Language', check_plain($queuedmessage['language']),),
+	  		array('Parameters', check_plain($queuedmessage['params']),),
+	  		array('Subject', check_plain($queuedmessage['subject']),),
+				array('Body', check_plain($queuedmessage['body']),),
 			);
 		}
 	}
