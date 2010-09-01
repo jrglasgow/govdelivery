@@ -1,13 +1,13 @@
 <?php
-
+// $Id$
 /*
  * @file
- * Install, update and uninstall functions for the GovDelivery Integration module.
+ * Install, update and uninstall functions for the 
+ * GovDelivery Integration module.
  */
 
 function govdelivery_install() {
-  drupal_install_schema('govdelivery_message_queue');
-  drupal_install_schema('govdelivery_subscription_queue');
+  drupal_install_schema('govdelivery');
 }
 
 function govdelivery_uninstall() {
@@ -19,10 +19,10 @@ function govdelivery_uninstall() {
   variable_del('govdelivery_test_settings');
 }
 
-
 function govdelivery_schema() {
-  $schema['govdelivery_message_queue'] = drupal_get_schema_unprocessed('system', 'cache');
-  $schema['govdelivery_subscription_queue'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema_system_cache = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['govdelivery_message_queue'] = $schema_system_cache;
+  $schema['govdelivery_subscription_queue'] = $schema_system_cache;
   return $schema;
 }
 

@@ -6,30 +6,40 @@ function govdelivery_perm() {
 
 function govdelivery_menu() {
   $items['admin/settings/govdelivery'] = array(
-    'title' => 'GovDelivery Settings',
+    'title' => t('GovDelivery Settings'),
+    'description' => t('Settings for GovDelivery to connect with the GovDelivery ODM and Subscription service.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('govdelivery_settings'),
     'access arguments' => array('Manage GovDelivery Settings'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items['admin/settings/govdelivery_test'] = array(
-    'title' => 'GovDelivery Settings test',
+    'title' => t('GovDelivery Settings Test - Messages'),
+    'description' => t('Test sending messages through Drupal correctly route to the GovDelivery service.'),
     'page callback' => 'drupal_get_form',
     'page arguments' => array('govdelivery_test_settings'),
     'access arguments' => array('Manage GovDelivery Settings'),
     'type' => MENU_NORMAL_ITEM,
   );
+  $items['admin/settings/govdelivery_test_subscriptions'] = array(
+    'title' => t('GovDelivery Settings Test - Subscriptions'),
+    'description' => t('Test signup process for GovDelivery Subscription services.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('govdelivery_test_subscriptions'),
+    'access arguments' => array('Manage GovDelivery Settings'),
+    'type' => MENU_NORMAL_ITEM,
+  );
   $items['admin/reports/govdelivery_message_queue'] = array(
-    'title' => 'GovDelivery Message Queue',
-    'description' => 'View current items in the message queue.',
+    'title' => t('GovDelivery Message Queue'),
+    'description' => t('View current items in the message queue.'),
     'page callback' => 'govdelivery_message_queue_report',
     'page arguments' => array(''),
     'access arguments' => array('Manage GovDelivery Settings'),
     'type' => MENU_NORMAL_ITEM,
   );
   $items['govdelivery_details'] = array(
-    'title' => 'GovDelivery Message Details',
-    'description' => 'Details of a queued messaged',
+    'title' => t('GovDelivery Message Details'),
+    'description' => t('Details of a queued messaged'),
     'page callback' => 'govdelivery_details',
     'page arguments' => array(),
     'access arguments' => array('Manage GovDelivery Settings'),
@@ -46,24 +56,24 @@ function govdelivery_settings() {
 
   $account_fieldset = array(
     '#type' => 'fieldset',
-    '#title' => 'Mail Accounts',
+    '#title' => t('Mail Accounts'),
   );
 
   if (isset($govdelivery_odm_settings) && isset($govdelivery_odm_settings['accounts']) && is_array($govdelivery_odm_settings['accounts'])) {
     foreach ($govdelivery_odm_settings['accounts'] as $username => $account_settings) {
       $account_fieldset[$username . '%###%'  . 'fromname'] = array(
           '#type' => "textfield",
-          '#title' => 'From Name',
+          '#title' => t('From Name'),
           '#default_value' => $account_settings['fromname'],
         );
       $account_fieldset[$username . '%###%' . 'username'] = array(
           '#type' => "textfield",
-          '#title' => 'Username',
+          '#title' => t('Username'),
           '#default_value' => $username,
         );
       $account_fieldset[$username . '%###%' . 'password'] = array(
         '#type' => "textfield",
-        '#title' => 'Password',
+        '#title' => t('Password'),
         '#default_value' => $account_settings['password'],
       );
     }
@@ -71,32 +81,32 @@ function govdelivery_settings() {
 
   $account_fieldset['fromname'] = array(
     '#type' => "textfield",
-    '#title' => 'From Name',
+    '#title' => t('From Name'),
   );
   $account_fieldset['username'] = array(
     '#type' => "textfield",
-    '#title' => 'Username',
+    '#title' => t('Username'),
   );
   $account_fieldset['password'] = array(
     '#type' => "textfield",
-    '#title' => 'Password',
+    '#title' => t('Password'),
   );
 
   $subscription_fieldset = array(
     '#type' => 'fieldset',
-    '#title' => 'Subscription API',
+    '#title' => t('Subscription API'),
   );
 
   $subscription_fieldset['subscription_service_url'] = array(
     '#type' => "textfield",
-    '#title' => 'URL for Subscription Service',
+    '#title' => t('URL for Subscription Service'),
     '#default_value' => $govdelivery_subscription_settings['service_url'],
   );
 
   $form=array(
     'govdelivery_odm_settings' => array(
       '#type' => 'fieldset',
-      '#title' => 'Mail Server Settings',
+      '#title' => t('Mail Server Settings'),
       '#tree' => TRUE,
       'accounts' => $account_fieldset,
       'server' => array(
@@ -107,13 +117,13 @@ function govdelivery_settings() {
       'enabled' => array(
         '#type' => 'radios',
         '#default_value' => $govdelivery_odm_settings['enabled'],
-        '#title' => 'Outbound mail rerouting',
+        '#title' => t('Outbound mail rerouting'),
         '#options' => array('Disabled', 'Enabled'),
       ),
       'queue' => array(
         '#type' => 'radios',
         '#default_value' => $govdelivery_odm_settings['queue'],
-        '#title' => 'Queue Messages (Messages that fail to send are queued regardless of this setting)',
+        '#title' => t('Queue Messages (Messages that fail to send are queued regardless of this setting)'),
         '#options' => array('Disabled', 'Enabled'),
       ),
     ),
@@ -134,7 +144,6 @@ function govdelivery_settings_submit($form, $postinfo) {
   foreach ($govdelivery_odm_settings['accounts'] as $composite_key => $value) {
     // if we don't have a value we don't want to do anything
     if (isset($value) && !empty($value)) {
-      print "value is $value \n";
       $key_elements = explode('%###%', $composite_key);
       if (count($key_elements) == 2) {
         $username = $key_elements[0];
@@ -183,15 +192,15 @@ function govdelivery_test_settings() {
   $form = array(
     'govdelivery_test_settings' => array(
       '#type' => 'fieldset',
-      '#title' => 'GovDelivery Test Settings',
+      '#title' => t('GovDelivery Test Settings'),
       '#tree' => TRUE,
       'recipients' => array(
         '#type' => 'textfield',
-        '#title' => 'Recipient\'s Email (Comma seperated)',
+        '#title' => t('Recipient\'s Email (Comma seperated)'),
       ),
       'test' => array(
       '#type' => 'submit',
-      '#value' => 'Test send message',
+      '#value' => t('Send test message'),
       ),
     ),
   );
@@ -213,6 +222,46 @@ function govdelivery_send_test_message($send_to) {
   return drupal_mail('govdelivery', 'test_id', $send_to, array(), NULL, TRUE);
 }
 
+// Signup an email address for a specified list and pass any known questions and answers along.
+function govdelivery_test_subscriptions() {
+  $form = array(
+    'govdelivery_test_subscriptions' => array(
+      '#type' => 'fieldset',
+      '#title' => t('GovDelivery Settings Test - Subscriptions'),
+      '#tree' => TRUE,
+      'subscriber' => array(
+        '#type' => 'textfield',
+        '#title' => t('Subscriber\'s Email'),
+      ),
+      'list_code' => array(
+        '#type' => 'textfield',
+        '#title' => t('Subscription List Code'),
+      ),
+      // Use Queue option
+      'test' => array(
+      '#type' => 'submit',
+      '#value' => t('Test send message'),
+      ),
+    ),
+  );
+
+  return $form;
+}
+
+// Need validation that there is only one subscriber or change to handle multiple subscriptions.
+
+function govdelivery_test_subscriptions_submit($form, $postinfo) {
+  $subscriber = $postinfo['values']['govdelivery_test_subscriptions']['subscriber'];
+  $list_code = $postinfo['values']['govdelivery_test_subscriptions']['list_code'];
+
+  if (isset($subscriber) && !empty($subscriber) && isset($list_code) && !empty($list_code)) {
+    $status = govdelivery_subscribe($list_code, $subscriber, FALSE);
+  }
+
+  drupal_set_message(t('%response', array('%response' => $status ? 'Subscription Added.' : 'Subscription Failed.')));
+}
+
+
 function govdelivery_mail($key, &$message, $params) {
   $message['subject'] = 'GovDelivery test message';
   if (isset($_SERVER['HTTP_HOST'])) {
@@ -232,7 +281,7 @@ function govdelivery_queued_subscribe($item) {
   govdelivery_subscribe($item['code'], $item['email'], TRUE);
 }
 
-//Subscribe a user to a list via webservice
+// Subscribe a user to a list via webservice
 function govdelivery_subscribe($list_code, $email, $from_queue = FALSE) {
   $govdelivery_subscription_settings = variable_get('govdelivery_subscription_settings', NULL);
   if ( $govdelivery_subscription_settings ) {
@@ -484,7 +533,7 @@ function govdelivery_filter_email($address) {
 
 // Send messages immediately or to the queue if enabled.
 function govdelivery_process_message($key, $message) {
-  //Check preferences
+  // Check preferences
   $govdelivery_odm_settings = variable_get('govdelivery_odm_settings', array());
   $send_success = FALSE;
 
@@ -560,16 +609,16 @@ function govdelivery_details($cid) {
       );
       // Setup the rows.
       $rows = array(
-        array('CID', check_plain($cid)),
-        array('ID', check_plain($queuedmessage['id'])),
-        array('To', check_plain($queuedmessage['to'])),
-        array('Errors-To', check_plain($queuedmessage['headers']['Errors-To'])),
-        array('Return-Path', check_plain($queuedmessage['headers']['Return-Path'])),
-        array('Sender', check_plain($queuedmessage['headers']['Sender'])),
-        array('Language', check_plain($queuedmessage['language'])),
-        array('Parameters', check_plain($queuedmessage['params'])),
-        array('Subject', check_plain($queuedmessage['subject'])),
-        array('Body', check_plain($queuedmessage['body'])),
+        array('CID', check_plain($cid) ),
+        array('ID', check_plain($queuedmessage['id']) ),
+        array('To', check_plain($queuedmessage['to']) ),
+        array('Errors-To', check_plain($queuedmessage['headers']['Errors-To']) ),
+        array('Return-Path', check_plain($queuedmessage['headers']['Return-Path']) ),
+        array('Sender', check_plain($queuedmessage['headers']['Sender']) ),
+        array('Language', (empty($queuedmessage['language']) ? '' : implode(',', $queuedmessage['language'])) ),
+        array('Parameters', check_plain($queuedmessage['params']) ),
+        array('Subject', check_plain($queuedmessage['subject']) ),
+        array('Body', check_plain($queuedmessage['body']) ),
       );
     }
   }
