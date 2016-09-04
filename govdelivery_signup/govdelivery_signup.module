@@ -74,7 +74,7 @@ function govdelivery_signup_blockform($form, &$form_state) {
   $form['govdelivery_signup']['email'] = array(
     '#type' => 'textfield',
     '#title' => t(variable_get('govdelivery_signup_emaillabel', '')),
-    '#default_value' => t(variable_get('govdelivery_signup_emailvalue', '')),
+    '#attributes' => array('placeholder' => t(variable_get('govdelivery_signup_emailvalue', ''))),
     '#description' => t(variable_get('govdelivery_signup_emaildesc', '')),
     '#maxlength' => 250,
     '#size' => 25,
