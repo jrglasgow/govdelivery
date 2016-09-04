@@ -750,7 +750,7 @@ function govdelivery_send_message($message) {
   $result = drupal_http_request($server . '/messages/email', $options);
   // HTTP code for this?
   if ($result->code == 200 or $result->code == 201) {
-    $send_success = TRUE;
+    $sendsuccess = TRUE;
   }
   else {
     watchdog('govdelivery', 'Exception: Error in sending email: %error', array('%error' => $result->code), WATCHDOG_ERROR);

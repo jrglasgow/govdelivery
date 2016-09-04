@@ -144,7 +144,7 @@ function drush_govdelivery_queue_types() {
  *   The number of messages to send from the queue.
  */
 function drush_govdelivery_send_queue($type = NULL, $bid = NULL, $num = NULL) {
-  $types = drush_govdelievery_queue_types();
+  $types = drush_govdelivery_queue_types();
   if ($type) {
     $choice = $type;
   }
