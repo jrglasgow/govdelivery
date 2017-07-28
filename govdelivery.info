@@ -1,8 +1,0 @@
-name = GovDelivery TMS Integration
-description =  Integrates Drupal Mail with the GovDelivery Transactional Messaging Service outbound mail platform (non-SMTP).
-package = GovDelivery
-core = 7.x
-
-files[] = govdelivery.mail.inc
-files[] = libraries/GovDeliverySubscriberAPI.php
-

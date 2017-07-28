@@ -1,8 +1,0 @@
-name = GovDelivery Signup
-description = Places a Govdelivery signup box on the website based on the block selected.
-package = GovDelivery
-core = 7.x
-
-configure = admin/config/govdelivery/signup
-files[] = govdelivery_signup.module
-files[] = govdelivery_signup.admin.inc

@@ -54,6 +54,7 @@ function govdelivery_disable() {
  */
 function govdelivery_schema() {
   // Bin field that will be added to all future queues.
+  /*
   $bin = array(
     'description' => 'A bin id this message is assigned to.',
     'type' => 'int',
@@ -85,7 +86,7 @@ function govdelivery_schema() {
   $schema['govdelivery_subscriber_api_subscriber_queue'] = $schema_system_cache;
   $schema['govdelivery_subscriber_api_subscriber_queue']['fields']['bid'] = $bin;
   $schema['govdelivery_subscriber_api_subscriber_queue']['indexes']['bid'] = array('bid');
-
+*/
   return $schema;
 }
 
