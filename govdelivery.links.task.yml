@@ -1,0 +1,15 @@
+govdelivery.settings:
+  route_name: govdelivery.settings
+  base_route: govdelivery.settings
+  title: 'Settings'
+govdelivery.test_messages:
+  route_name: govdelivery.test_messages
+  base_route: govdelivery.settings
+  title: 'Test Messages'
+  weight: 20
+govdelivery.test_subscriptions:
+  route_name: govdelivery.test_subscriptions
+  base_route: govdelivery.settings
+  title: 'Test Subscriptions'
+  weight: 20
+  
