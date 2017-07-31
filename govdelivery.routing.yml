@@ -6,42 +6,42 @@ govdelivery.admin_base:
   requirements:
     _permission: 'access administration pages'
 
-govdelivery.settings:
-  path: admin/config/govdelivery/settings
+govdelivery.tms_settings:
+  path: admin/config/govdelivery/tms/settings
   defaults:
-    _title: 'Settings'
+    _title: 'Gov Delivery Targeted Messaging System'
     _form: 'Drupal\govdelivery\Form\GovDeliverySettingsForm'
   requirements:
-    _permission: 'manage govdelivery settings'
+    _permission: 'manage govdelivery tms settings'
 
-govdelivery.test_messages:
-  path: /admin/config/govdelivery/settings/test-messages
+govdelivery.tms_test_messages:
+  path: /admin/config/govdelivery/tms/settings/test-messages
   defaults:
     _title: 'Test Messages'
     _form: 'Drupal\govdelivery\Form\GovDeliveryTestMessagesForm'
   requirements:
-    _permission: 'manage govdelivery settings'
+    _permission: 'manage govdelivery tms settings'
 
-govdelivery.test_subscriptions:
-  path: /admin/config/govdelivery/settings/test-subscriptions
+govdelivery.tms_test_subscriptions:
+  path: /admin/config/govdelivery/tms/settings/test-subscriptions
   defaults:
     _title: 'Test Subscriptions'
     _form: 'Drupal\govdelivery\Form\GovDeliveryTestSubscriptionsForm'
   requirements:
-    _permission: 'manage govdelivery settings'
+    _permission: 'manage govdelivery tms settings'
 
-govdelivery.message_queue:
-  path: /admin/reports/govdelivery_message_queue
+govdelivery.tms_message_queue:
+  path: /admin/reports/govdelivery_tms_message_queue
   defaults:
     _title: 'GovDelivery Message Queue'
     _controller: 'Drupal\govdelivery\Controller\GovDeliveryController::messageQueue'
   requirements:
-    _permission: 'manage govdelivery settings'
+    _permission: 'manage govdelivery tms settings'
 
-govdelivery.message_queue_details:
+govdelivery.tms_message_queue_details:
   path: /admin/reports/govdelivery_message_queue_details
   defaults:
     _title: 'GovDelivery Message Queue Details'
     _controller: 'Drupal\govdelivery\Controller\GovDeliveryController::messageQueueDetails'
   requirements:
-    _permission: 'manage govdelivery settingss'
+    _permission: 'manage govdelivery tms settingss'

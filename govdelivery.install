@@ -8,6 +8,7 @@
  * Implements hook_uninstall().
  */
 function govdelivery_uninstall() {
+  /*
   $mail_system = variable_get('mail_system');
   if (isset($mail_system) && !empty($mail_system)) {
     $mail_system['default-system'] = 'DefaultMailSystem';
@@ -15,6 +16,7 @@ function govdelivery_uninstall() {
   }
   variable_del('govdelivery_tms_settings');
   variable_del('govdelivery_subscription_settings');
+  */
 }
 
 /**
@@ -53,6 +55,7 @@ function govdelivery_disable() {
  * @todo Fix Indexes.
  */
 function govdelivery_schema() {
+  $schema = array();
   // Bin field that will be added to all future queues.
   /*
   $bin = array(

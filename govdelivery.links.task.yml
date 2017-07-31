@@ -1,15 +1,15 @@
-govdelivery.settings:
-  route_name: govdelivery.settings
-  base_route: govdelivery.settings
+govdelivery.tms_settings:
+  route_name: govdelivery.tms_settings
+  base_route: govdelivery.tms_settings
   title: 'Settings'
-govdelivery.test_messages:
-  route_name: govdelivery.test_messages
-  base_route: govdelivery.settings
+govdelivery.tms_test_messages:
+  route_name: govdelivery.tms_test_messages
+  base_route: govdelivery.tms_settings
   title: 'Test Messages'
   weight: 20
-govdelivery.test_subscriptions:
-  route_name: govdelivery.test_subscriptions
-  base_route: govdelivery.settings
+govdelivery.tms_test_subscriptions:
+  route_name: govdelivery.tms_test_subscriptions
+  base_route: govdelivery.tms_settings
   title: 'Test Subscriptions'
   weight: 20
   
