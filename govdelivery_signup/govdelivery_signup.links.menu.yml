@@ -1,0 +1,13 @@
+govdelivery.admin_base:
+  title: 'GovDelivery'
+  parent: system.admin_config_services
+  description: 'GovDelivery settings.'
+  route_name: govdelivery.admin_base
+  weight: 0
+  
+govdelivery_signup.settings:
+  title: 'GovDelivery Signup'
+  parent: govdelivery.admin_base
+  description: 'GovDelivery Signup services settings'
+  route_name: govdelivery_signup.settings
+  weight: 0

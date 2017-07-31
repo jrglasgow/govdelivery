@@ -8,33 +8,6 @@
  */
 
 /**
- * Implements hook_menu().
- */
-function govdelivery_signup_menu() {
-  $items = array();
-  $items['admin/config/govdelivery'] = array(
-    'title' => 'GovDelivery',
-    'description' => 'Configure GovDelivery settings.',
-    'position' => 'right',
-    'weight' => 0,
-    'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
-    'file' => 'system.admin.inc',
-    'file path' => drupal_get_path('module', 'system'),
-  );
-  $items['admin/config/govdelivery/signup'] = array(
-    'title' => 'GovDelivery Signup',
-    'description' => 'Configure GovDelivery Signup settings.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('govdelivery_signup_admin_settings'),
-    'file' => 'govdelivery_signup.admin.inc',
-    'access arguments' => array('access administration pages'),
-    'weight' => 0,
-  );
-  return $items;
-}
-
-/**
  * Implements hook_block_info().
  */
 function govdelivery_signup_block_info($op = 'list', $delta = 0, $edit = array()) {
