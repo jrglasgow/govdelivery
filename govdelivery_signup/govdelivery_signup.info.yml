@@ -3,4 +3,4 @@ description: Places a Govdelivery signup box on the website based on the block s
 package: GovDelivery
 core: 8.x
 type: module
-configure: admin/config/govdelivery/signup
+configure: govdelivery_signup.settings

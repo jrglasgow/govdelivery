@@ -1,0 +1,5 @@
+fieldset_desc: 'Stay informed'
+button_label: 'Sign me up'
+description: 'Sign up for updates'
+email_label: 'E-mail address'
+email_placeholder: 'john@example.com'

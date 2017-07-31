@@ -1,0 +1,28 @@
+govdelivery_signup.settings:
+  type: config_object
+  label: 'Configuration'
+  mapping:
+    fieldset_desc:
+      label: 'Signup Box Label'
+      type: string
+    button_label:
+      type: string
+      label: 'Button Label'
+    description:
+      type: string
+      label: 'Description'
+    email_label:
+      type: string
+      label: 'E-mail Address Box Label'
+    email_description:
+      type: string
+      label: 'Label for the email field'
+    email_placeholder:
+      type: string
+      label: 'E-mail field placeholder'
+    client_code:
+      type: string
+      label: 'Client Code'
+    server:
+      type: string
+      label: 'Server'
