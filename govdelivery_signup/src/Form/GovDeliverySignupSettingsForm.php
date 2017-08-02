@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\saml_sp\Form\GovDeliverySignupSettingsForm.
+ * Contains \Drupal\govdelivery_signup\Form\GovDeliverySignupSettingsForm.
  */
 
 namespace Drupal\govdelivery_signup\Form;
@@ -30,7 +30,6 @@ class GovDeliverySignupSettingsForm extends ConfigFormBase {
     foreach ($values AS $key => $value) {
       $config->set($key, $value);
     }
-    dpm($values);
 
     $config->save();
 
