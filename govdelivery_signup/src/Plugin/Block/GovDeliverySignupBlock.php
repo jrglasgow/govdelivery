@@ -45,6 +45,7 @@ class GovDeliverySignupBlock extends BlockBase {
       'email_placeholder' => 'john@example.com',
       'client_code' => '',
       'server' => 'https://public.govdelivery.com',
+      'js_enabled' => TRUE,
     ];
   }
 
@@ -117,6 +118,13 @@ class GovDeliverySignupBlock extends BlockBase {
       '#maxlength' => 100,
       '#required' => TRUE,
     );
+
+    $form['govdelivery_signup']['js_enabled'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Enable JS'),
+      '#description' => $this->t('Allow the submit to be handled with Javascript instead of a POST to the server.'),
+      '#default_value' => $config['js_enabled'],
+    ];
 
     return $form;
   }

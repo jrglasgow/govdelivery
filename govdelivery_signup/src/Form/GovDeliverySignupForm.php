@@ -13,6 +13,11 @@ use Drupal\Core\Routing\TrustedRedirectResponse;
 
 class GovDeliverySignupForm extends FormBase {
   /**
+   * Hold the form configuration
+   */
+  private $config;
+
+  /**
    * {@inheritdoc}
    */
   public function getFormId() {
@@ -47,7 +52,13 @@ class GovDeliverySignupForm extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form = [], FormStateInterface $form_state) {
-    $config = func_get_args()[2];
+    $this->config = $config = func_get_args()[2];
+    $config['url'] = $config['server'] . '/accounts/' . $config['client_code'] . '/subscribers/qualify?';
+
+    if ($config['js_enabled']) {
+      $form['#attached']['library'][] = 'govdelivery_signup/signupForm';
+      $form['#attached']['drupalSettings']['govDeliverySignup'] = $config;
+    }
 
     $form['govdelivery_signup'] = array(
       '#type' => 'fieldset',
