@@ -74,6 +74,7 @@ class GovDeliverySignupForm extends FormBase {
       '#type' => 'submit',
       '#value' => $this->t($config['button_label']),
     ];
+    $form['#theme'] = 'govdelivery_signup_displayform';
 
     return $form;
   }
