@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Contains \Drupal\saml_sp\Form\GovDeliverySettingsForm.
+ * Contains \Drupal\govdelivery\Form\GovDeliverySettingsForm.
  */
 
 namespace Drupal\govdelivery\Form;
