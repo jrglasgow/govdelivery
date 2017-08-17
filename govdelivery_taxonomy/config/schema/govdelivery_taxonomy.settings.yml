@@ -18,9 +18,28 @@ govdelivery_taxonomy.settings:
       label: 'Drupal Instance Base URL (Without HTTPS://)'
       description: 'This is the URL to this Drupal instance without any subdirectories'
       type: string
-    category:
-      label: 'GovDelivery DCM Parent Category Code for Created Topics'
+    categories:
+      label: 'GovDelivery Category to Taxonomy Vocabulary mappings'
       type: sequence
       sequence:
-        type: string
+        type: mapping
+        mapping:
+          vid:
+            label: 'Drupal Vocabulary ID'
+            type: string
+          category_id:
+            label: 'GovDelivery Category ID'
+            type: string
+    topics:
+      label: 'GovDelivery Topics to Taxonomy Term mappings'
+      type: sequence
+      sequence:
+        type: mapping
+        mapping:
+          tid:
+            label: 'Drupal Term ID'
+            type: string
+          topic_id:
+            label: 'GovDelivery Topic ID'
+            type: string
     

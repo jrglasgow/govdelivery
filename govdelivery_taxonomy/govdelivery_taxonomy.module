@@ -5,18 +5,8 @@
  * GovDelivery Taxonomy Module
  */
 
-/**
- * Implements hook_taxonomy_term_insert().
- */
-function govdelivery_taxonomy_taxonomy_term_insert($term) {
-  $name = trim($term->getName());
-  $tid = $term->id();
-  $client = \Drupal::httpClient();
-  $topic_result = govdelivery_taxonomy_add_topic($name, $tid, $client);
-  dpm($topic_result, '$topic_result');
-  $category_result = govdelivery_taxonomy_categorize_topic($tid, $client);
-  dpm($category_result, '$category_result');
-}
+define('GOVDELIVERY_TAXONOMY_ADD_NEW', 1);
+define('GOVDELIVERY_TAXONOMY_NONE_SELECTED', 0);
 
 /**
  * GovDelivery API Call.
@@ -81,20 +71,33 @@ XML;
  *   HTTP response;
  * @todo
  */
-function govdelivery_taxonomy_categorize_topic($tid, $client = NULL) {
+function govdelivery_taxonomy_categorize_topic($tid, $category, $client = NULL) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
 
-  $category = $config->get('category');
+  //$category = $config->get('category');
+  $categories = [];
+  foreach ($category AS $key => $value) {
+    if ($value) {
+      $categories[] =<<<CATEGORY
+    <category>
+      <code>{$key}</code>
+    </category>
+CATEGORY;
+    }
+  }
+  if (empty($categories)) {
+    // we don't have any categories selected so don't bother trying to submit
+    return FALSE;
+  }
+
+  $categories = implode("\n", $categories);
   $xml = <<<XML
 <topic>
   <categories type="array">
-    <category>
-      <code>{$category}</code>
-    </category>
+{$categories}
   </categories>
 </topic>
 XML;
-
   
   if (empty($client)) {
     $client = \Drupal::httpClient();
@@ -160,4 +163,283 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
   }
 
   return $data;
+}
+
+/**
+ * get the information about a specific category
+ */
+function govdelivery_taxonomy_get_category($cat_code, $client = NULL, $reset = FALSE) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $cid = implode(':', [
+    'govdelivery_taxonomy_category',
+    $config->get('server'),
+    $config->get('clientcode'),
+    $cat_code
+  ]);
+
+  $data = NULL;
+  if (($cache = \Drupal::cache()->get($cid)) && !$reset) {
+    $data = $cache->data;
+  }
+  else {
+    try {
+      if (empty($client)) {
+        $client = \Drupal::httpClient();
+      }
+      $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories/' . $cat_code . '.xml';
+      $response = $client->request('GET', $url, [
+        'auth' => [
+          $config->get('username'),
+          $config->get('password')
+        ],
+      ]);
+
+      $body = $response->getBody();
+      $xml = $body->getContents();
+      $simplexml = new SimpleXMLElement($xml);
+      $data = json_decode(json_encode($simplexml));
+    }
+    catch (Exception $e) {
+      \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+      watchdog_exception('govdelivery', $e);
+      $data = [];
+    }
+
+    // don't cache if we have no data
+    if (!empty($data)) {
+      \Drupal::cache()->set($cid, $data);
+    }
+  }
+
+  return $data;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function govdelivery_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  //dpm($form_id, __function__);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add our field to the form.
+ */
+function govdelivery_taxonomy_form_taxonomy_vocabulary_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+
+  $categories = govdelivery_taxonomy_get_categories(NULL, TRUE);
+
+  $options = [
+    GOVDELIVERY_TAXONOMY_NONE_SELECTED => t('Don\'t associate with a GovDelivery Category'),
+    GOVDELIVERY_TAXONOMY_ADD_NEW => t('Create new GovDelivery Category'),
+  ];
+  if (!empty($categories)) {
+    foreach ($categories AS $category) {
+      $options[$category->code] = $category->name;
+    }
+  }
+  $default = GOVDELIVERY_TAXONOMY_NONE_SELECTED;
+  if (!empty($config->get('categories')) && isset($form['vid']['#default_value']) && !empty($form['vid']['#default_value'])) {
+    foreach ($config->get('categories') AS $vocab) {
+      if ($vocab['vid'] == $form['vid']['#default_value']) {
+        $default = $vocab['category_id'];
+      }
+    }
+  }
+
+  $form['govdelivery_category'] = [
+    '#title' => t('GovDelivery Category'),
+    '#description' => t('The category code in the GovDelivery system that matches this vocabulary. If a value is entered all new terms will be added to the GovDelivery system as Topics and existing terms can be associated with GovDelivery Topics. If "Don\'t associate..." is selected new terms will not be added as Topics and existing terms will not be able to be associated.'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => $default,
+  ];
+
+  $form['actions']['submit']['#submit'][] = 'govdelivery_taxonomy_form_taxonomy_vocabulary_form_submit';
+}
+function govdelivery_taxonomy_form_taxonomy_vocabulary_form_submit (array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  $values = $form_state->getValues();
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $categories = $config->get('categories');
+  $updated = FALSE;
+
+  if ($values['govdelivery_category'] == GOVDELIVERY_TAXONOMY_ADD_NEW) {
+    // create a new GovDelivery Category
+    govdelivery_taxonomy_create_category($values);
+  }
+  else {
+    // since we aren't creating a new Category, check to see if it was created
+    // by us in the past and update
+    $client_code = $config->get('clientcode');
+    $cat_code = $client_code . '_v_' . $values['vid'];
+    if ($values['govdelivery_category'] == $cat_code) {
+      // this was created by us
+      $category = govdelivery_taxonomy_get_category($cat_code, NULL, TRUE);
+      if ($values['name'] != $category->name || $values['description'] != $category->description) {
+        // we should update the category on Govdelivery
+        govdelivery_taxonomy_update_category($values);
+      }
+    }
+  }
+
+  // adjust the settings for the vocabulary
+  if (!empty($categories)) {
+    foreach ($categories AS $key => $value) {
+      if ($value['vid'] == $values['vid']) {
+        $categories[$key]['category_id'] = $values['govdelivery_category'];
+        $updated = TRUE;
+      }
+    }
+  }
+  if (!$updated) {
+    // we couldn't find a vocab to update, so add a new one
+    $categories[] = [
+      'vid' => $values['vid'],
+      'category_id' => $values['govdelivery_category'],
+    ];
+    $updated = TRUE;
+  }
+
+  if ($updated) {
+    \Drupal::configFactory()->getEditable('govdelivery_taxonomy.settings')->set('categories', $categories)->save();
+  }
+}
+
+/**
+ * create a new category in the GovDelivery system from a vocabulary
+ *
+ * @param $values - Array of values returned from the Vocab edit form
+ */
+function govdelivery_taxonomy_create_category(&$values) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $client_code = $config->get('clientcode');
+  $values['govdelivery_category'] = $client_code . '_v_' . $values['vid'];
+  $xml = <<<XML
+<category>
+  <allow-subscriptions type="boolean">true</allow-subscriptions>
+  <default-open type="boolean">true</default-open>
+  <code>{$values['govdelivery_category']}</code>
+  <description>{$values['description']}</description>
+  <name>{$values['name']}</name>
+  <short-name>{$values['name']}</short-name>
+</category>
+XML;
+
+  $client = \Drupal::httpClient();
+  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories.xml';
+
+  try {
+    $response = $client->request('POST', $url, [
+      'headers' => [
+        'Content-Type' => 'text/xml; charset=UTF-8',
+        'Accept' => 'text/xml',
+      ],
+      'auth' => [
+        $config->get('username'),
+        $config->get('password')
+      ],
+      'body' => $xml,
+    ]);
+    $body = $response->getBody();
+    $contents = $body->getContents();
+  }
+  catch(\GuzzleHttp\Exception\ClientException $e) {
+    \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+    watchdog_exception('govdelivery', $e);
+    $data = [];
+  }
+}
+
+
+/**
+ * create a new category in the GovDelivery system from a vocabulary
+ *
+ * @param $values - Array of values returned from the Vocab edit form
+ */
+function govdelivery_taxonomy_update_category(&$values) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $client_code = $config->get('clientcode');
+  $values['govdelivery_category'] = $client_code . '_v_' . $values['vid'];
+  $xml = <<<XML
+<category>
+  <allow-subscriptions type="boolean">true</allow-subscriptions>
+  <default-open type="boolean">true</default-open>
+  <code>{$values['govdelivery_category']}</code>
+  <description>{$values['description']}</description>
+  <name>{$values['name']}</name>
+  <short-name>{$values['name']}</short-name>
+</category>
+XML;
+
+  $client = \Drupal::httpClient();
+  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories/' . $values['govdelivery_category'] . '.xml';
+
+  try {
+    $response = $client->request('PUT', $url, [
+      'headers' => [
+        'Content-Type' => 'text/xml; charset=UTF-8',
+        'Accept' => 'text/xml',
+      ],
+      'auth' => [
+        $config->get('username'),
+        $config->get('password')
+      ],
+      'body' => $xml,
+    ]);
+    $body = $response->getBody();
+    $contents = $body->getContents();
+  }
+  catch(\GuzzleHttp\Exception\ClientException $e) {
+    \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+    watchdog_exception('govdelivery', $e);
+    $data = [];
+  }
+}
+
+/**
+ * Implements hook_form_BASE_ID_alter().
+ */
+function govdelivery_taxonomy_form_taxonomy_term_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $categories = govdelivery_taxonomy_get_categories(NULL);
+  if (!empty($categories)) {
+    $form['govdelivery_taxonomy'] = [
+      '#tree' => TRUE,
+    ];
+    $form['govdelivery_taxonomy']['category'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('GovDelivery Categories'),
+      '#description' => t('This term will be added as a topic for the selected categories.'),
+      '#tree' => TRUE,
+    );
+    foreach ($categories AS $category) {
+      if ($category->{'allow-subscriptions'} == 'true') {
+        $form['govdelivery_taxonomy']['category'][$category->code] = array(
+          '#type' => 'checkbox',
+          '#title' => $category->name,
+        );
+        if (gettype($category->description) == 'string') {
+          $form['govdelivery_taxonomy']['category'][$category->code]['#description'] = $category->description;
+        }
+      }
+    }
+  }
+  $form['actions']['submit']['#submit'][] = 'govdelivery_taxonomy_taxonomy_term_form_submit';
+}
+
+function govdelivery_taxonomy_taxonomy_term_form_submit(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  $values = $form_state->getValues();
+
+  $term = \Drupal\taxonomy\Entity\Term::load($values['tid']);
+
+  $name = trim($term->getName());
+  $tid = $term->id();
+  $client = \Drupal::httpClient();
+  // add the topic
+  $topic_result = govdelivery_taxonomy_add_topic($name, $tid, $client);
+  // add the categories
+  $category_result = govdelivery_taxonomy_categorize_topic($tid, $values['govdelivery_taxonomy']['category'], $client);
 }

@@ -138,27 +138,33 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     );
     $categories = govdelivery_taxonomy_get_categories(NULL);
-
-    $form['govdelivery_taxonomy']['category'] = array(
-      '#type' => 'fieldset',
-      '#title' => $this->t('GovDelivery Categories'),
-      '#description' => $this->t('Topics/Terms will be able to be assigned to these categories. Only GovDelivery categories that "allow subscriptions" are available.'),
-      //'#default_value' => $config->get('category'),
-      //'#maxlength' => 25,
-      //'#required' => TRUE,
-    );
-    foreach ($categories AS $category) {
-      if ($category->{'allow-subscriptions'} == 'true') {
-        $form['govdelivery_taxonomy']['category'][$category->code] = array(
-          '#type' => 'checkbox',
-          '#title' => $category->name,
-          '#default_value' => array_search($category->code, $config->get('category')) !== FALSE ? TRUE : FALSE,
-        );
-        if (gettype($category->description) == 'string') {
-          $form['govdelivery_taxonomy']['category'][$category->code]['#description'] = $category->description;
+    if (!empty($categories)) {
+      $form['govdelivery_taxonomy']['category'] = array(
+        '#type' => 'fieldset',
+        '#title' => $this->t('GovDelivery Categories'),
+        '#description' => $this->t('Topics/Terms will be able to be assigned to these categories. Only GovDelivery categories that "allow subscriptions" are available.'),
+      );
+      foreach ($categories AS $category) {
+        if ($category->{'allow-subscriptions'} == 'true') {
+          $form['govdelivery_taxonomy']['category'][$category->code] = array(
+            '#type' => 'checkbox',
+            '#title' => $category->name,
+            '#default_value' => array_search($category->code, $config->get('category')) !== FALSE ? TRUE : FALSE,
+          );
+          if (gettype($category->description) == 'string') {
+            $form['govdelivery_taxonomy']['category'][$category->code]['#description'] = $category->description;
+          }
         }
       }
     }
+    else {
+      $form['govdelivery_taxonomy']['category'] = array(
+        '#type' => 'fieldset',
+        '#title' => $this->t('GovDelivery Categories - no categories available'),
+        '#description' => $this->t('Topics/Terms will be able to be assigned to these categories. Only GovDelivery categories that "allow subscriptions" are available.'),
+      );
+    }
+
 
     return parent::buildForm($form, $form_state);
   }
