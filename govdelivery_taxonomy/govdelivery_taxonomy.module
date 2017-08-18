@@ -488,11 +488,12 @@ XML;
   govdelivery_taxonomy_get_categories(NULL, TRUE);
 }
 
+
 /**
- * Implements hook_form_BASE_ID_alter().
+ * determine the category code for for the associated vocabulary
  */
-function govdelivery_taxonomy_form_taxonomy_term_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  $config = \Drupal::config('govdelivery_taxonomy.settings');
+function govdelivery_taxonomy_vid_category_code($vid) {
+   $config = \Drupal::config('govdelivery_taxonomy.settings');
 
   $categories = $config->get('categories');
   $category_code = FALSE;
@@ -502,37 +503,19 @@ function govdelivery_taxonomy_form_taxonomy_term_form_alter(&$form, \Drupal\Core
         continue;
       }
       if ($category['vid'] == $form['vid']['#value']) {
-        $category_code = $category['category_id'];
+        return $category['category_id'];
       }
     }
   }
-
-  if ($category_code) {
-    // we have a valid category code, make sure this term gets added
-    $form['actions']['submit']['#submit'][] = 'govdelivery_taxonomy_taxonomy_term_form_submit';
-  }
-}
-
-function govdelivery_taxonomy_taxonomy_term_form_submit(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
-  /*
-  $values = $form_state->getValues();
-dpm($values, '$values');
-  $term = \Drupal\taxonomy\Entity\Term::load($values['tid']);
-
-  $name = trim($term->getName());
-  $tid = $term->id();
-  $client = \Drupal::httpClient();
-  // add the topic
-  $topic_result = govdelivery_taxonomy_add_topic($term, $client);
-  // add the categories
-  $category_result = govdelivery_taxonomy_categorize_topic($tid, $values['vid'], $client);
-  /**/
 }
 
 /**
  * Implements hook_taxonomy_term_insert().
  */
 function govdelivery_taxonomy_taxonomy_term_insert($term) {
+  if (!govdelivery_taxonomy_vid_category_code($term->getVocabularyId())) {
+    return;
+  }
   $name = trim($term->getName());
   $tid = $term->id();
   $client = \Drupal::httpClient();
@@ -546,6 +529,9 @@ function govdelivery_taxonomy_taxonomy_term_insert($term) {
  * Implements hook_taxonomy_term_insert().
  */
 function govdelivery_taxonomy_taxonomy_term_update($term) {
+  if (!govdelivery_taxonomy_vid_category_code($term->getVocabularyId())) {
+    return;
+  }
   //dpm($term, '$term');
   $category_result = govdelivery_taxonomy_update_topic($term);
 }
