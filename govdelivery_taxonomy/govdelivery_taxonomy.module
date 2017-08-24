@@ -1,5 +1,8 @@
 <?php
 
+use Drupal\Core\Entity\EntityTypeInterface;
+use \Drupal\taxonomy\Entity\Term;
+
 /**
  * @file
  * GovDelivery Taxonomy Module
@@ -14,9 +17,9 @@ define('GOVDELIVERY_TAXONOMY_NONE_SELECTED', 0);
 function govdelivery_taxonomy_add_topic($term, $client = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
   $drupalserver = $config->get('drupalserver');
+  $tid = $term->id();
   $topic_code = govdelivery_taxonomy_generate_topic_code($tid);
   $name = $term->getName();
-  $tid = $term->id();
   $description = trim(strip_tags($term->getDescription()));
   $xml = <<<XML
 <topic>
@@ -60,7 +63,7 @@ XML;
     return $contents;
   }
   catch (\GuzzleHttp\Exception\ClientException $e) {
-    \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+    //\Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
     watchdog_exception('govdelivery', $e);
   }
 }
@@ -75,27 +78,8 @@ function govdelivery_taxonomy_update_topic($term, $client = FALSE) {
   $name = $term->getName();
   $tid = $term->id();
   $description = trim(strip_tags($term->getDescription()));
-  $xml = <<<XML
-<topic>
-  <name>{$name}</name>
-  <short-name>{$name}</short-name>
-  <description>{$description}</description>
-  <code>{$topic_code}</code>
-  <pagewatch-autosend type="boolean">true</pagewatch-autosend>
-  <pagewatch-enabled type="boolean">true</pagewatch-enabled>
-  <pagewatch-suspended type="boolean">false</pagewatch-suspended>
-  <pagewatch-type type="integer">2</pagewatch-type>
-  <pages type="array">
-    <page>
-      <url>http://{$drupalserver}/taxonomy/term/{$tid}/feed</url>
-    </page>
-  </pages>
-  <visibility>Listed</visibility>
-  <default-pagewatch-results type="integer" nil="true"></default-pagewatch-results>
-</topic>
-XML;
 
-$xml = <<<XML
+  $xml = <<<XML
 <topic>
   <code>{$topic_code}</code>
   <name>{$name}</name>
@@ -234,6 +218,55 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
       $xml = $body->getContents();
       $simplexml = new SimpleXMLElement($xml);
       $data = json_decode(json_encode($simplexml))->category;
+    }
+    catch (\GuzzleHttp\Exception\ClientException $e) {
+      \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+      watchdog_exception('govdelivery', $e);
+      $data = [];
+    }
+
+    // don't cache if we have no data
+    if (!empty($data)) {
+      \Drupal::cache()->set($cid, $data);
+    }
+  }
+
+  return $data;
+}
+
+/**
+ * fetch and cache a list of categories
+ */
+function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $cid = 'govdelivery_taxonomy_topics:' . $config->get('server') . ':' . $config->get('clientcode');
+
+  $data = NULL;
+  if (($cache = \Drupal::cache()->get($cid)) && !$reset) {
+    $data = $cache->data;
+  }
+  else {
+    try {
+      if (empty($client)) {
+        $client = \Drupal::httpClient();
+      }
+      $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/topics.xml';
+      $response = $client->request('GET', $url, [
+        'auth' => [
+          $config->get('username'),
+          $config->get('password')
+        ],
+      ]);
+
+      $body = $response->getBody();
+      $xml = $body->getContents();
+      $simplexml = new SimpleXMLElement($xml);
+      $topics = json_decode(json_encode($simplexml))->topic;
+
+      $data = array();
+      foreach ($topics AS $topic) {
+        $data[$topic->code] = $topic;
+      }
     }
     catch (\GuzzleHttp\Exception\ClientException $e) {
       \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
@@ -502,7 +535,7 @@ function govdelivery_taxonomy_vid_category_code($vid) {
       if ($category_code) {
         continue;
       }
-      if ($category['vid'] == $form['vid']['#value']) {
+      if ($category['vid'] == $vid) {
         return $category['category_id'];
       }
     }
@@ -510,28 +543,134 @@ function govdelivery_taxonomy_vid_category_code($vid) {
 }
 
 /**
- * Implements hook_taxonomy_term_insert().
+ * Implements hook_ENTITY_TYPE_load().
  */
-function govdelivery_taxonomy_taxonomy_term_insert($term) {
-  if (!govdelivery_taxonomy_vid_category_code($term->getVocabularyId())) {
-    return;
+function govdelivery_taxonomy_taxonomy_term_load($terms) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $topics = $config->get('topics');
+  $gd_topics = govdelivery_taxonomy_get_topics();
+
+  foreach ($terms AS $tid => $term) {
+    if (!empty($topics)) {
+      foreach ($topics AS $topic) {
+        if ($topic['tid'] == $term->id()) {
+          $term->govDeliveryTopicCode = $topic['topic_id'];
+        }
+      }
+    }
+    if (!isset($term->govDeliveryTopicCode) || empty($term->govDeliveryTopicCode)) {
+      // we don't already have a topic code set for this term
+      $topic_code = govdelivery_taxonomy_generate_topic_code($term->id());
+      if (isset($gd_topics[$topic_code]) && !empty($gd_topics[$topic_code])) {
+        $term->govDeliveryTopicCode = $topic_code;
+      }
+      else {
+        // the topic, if it exists, wasn't created by us
+      }
+    }
+
+    $term->govDeliveryCategoryCode = govdelivery_taxonomy_vid_category_code($term->getVocabularyId());
   }
-  $name = trim($term->getName());
-  $tid = $term->id();
-  $client = \Drupal::httpClient();
-  // add the topic
-  $topic_result = govdelivery_taxonomy_add_topic($term, $client);
-  // add the categories
-  $category_result = govdelivery_taxonomy_categorize_topic($tid, $term->getVocabularyId(), $client);
 }
 
 /**
- * Implements hook_taxonomy_term_insert().
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Add our field to the form.
  */
-function govdelivery_taxonomy_taxonomy_term_update($term) {
-  if (!govdelivery_taxonomy_vid_category_code($term->getVocabularyId())) {
+function govdelivery_taxonomy_form_taxonomy_term_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $vid = $form['vid']['#value'];
+  $tid = $form['tid']['#value'];
+  $term =  Term::load($tid);
+
+  $proceed = FALSE;
+  foreach ($config->get('categories') AS $cat) {
+    if ($cat['vid'] == $vid && !empty($cat['category_id'])) {
+      $proceed = TRUE;
+    }
+  }
+
+  if (!$proceed) {
     return;
   }
-  //dpm($term, '$term');
-  $category_result = govdelivery_taxonomy_update_topic($term);
+  $form['is_new'] = [
+    '#type' => 'value',
+    '#value' => empty($form['tid']['#value']),
+  ];
+
+  $topics = govdelivery_taxonomy_get_topics(NULL, TRUE);
+
+  $options = [
+    GOVDELIVERY_TAXONOMY_ADD_NEW => t('Create new GovDelivery Topic'),
+  ];
+  if (!empty($topics)) {
+    foreach ($topics AS $topic) {
+      $options[$topic->code] = $topic->name;
+    }
+  }
+
+  $form['govdelivery_topic'] = [
+    '#title' => t('GovDelivery Topic'),
+    '#description' => t('The topic code in the GovDelivery system that matches this term.'),
+    '#type' => 'select',
+    '#options' => $options,
+    '#default_value' => !empty($term) && $term->govDeliveryTopicCode ? $term->govDeliveryTopicCode: GOVDELIVERY_TAXONOMY_ADD_NEW,
+  ];
+
+  $form['actions']['submit']['#submit'][] = 'govdelivery_taxonomy_form_taxonomy_term_form_submit';
+}
+function govdelivery_taxonomy_form_taxonomy_term_form_submit (array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  $config = \Drupal::config('govdelivery_taxonomy.settings');
+  $values = $form_state->getValues();
+  $term = Term::load($values['tid']);
+
+  $updated = FALSE;
+  $topics = $config->get('topics');
+
+  if ($values['govdelivery_topic'] == govdelivery_taxonomy_generate_topic_code($values['tid'])) {
+    // the selected topic was created for this term, so ensure that it is not in the settings
+    foreach ($topics AS $key => $topic) {
+      if ($topic['tid'] == $values['tid']) {
+        unset($topics[$key]);
+        $updated = TRUE;
+      }
+    }
+    // as this was a topic created for this term update the topic with any
+    // changes to the term
+    govdelivery_taxonomy_update_topic($term);
+  }
+  else if ($values['govdelivery_topic'] == GOVDELIVERY_TAXONOMY_ADD_NEW) {
+    $name = trim($term->getName());
+    $term = Term::load($values['tid']);
+    $client = \Drupal::httpClient();
+    // add the topic
+    $topic_result = govdelivery_taxonomy_add_topic($term, $client);
+    // add the categories
+    $category_result = govdelivery_taxonomy_categorize_topic($tid, $term->getVocabularyId(), $client);
+    $values['govdelivery_topic'] = govdelivery_taxonomy_generate_topic_code($values['tid']);
+    $updated = TRUE;
+  }
+  else {
+    // search to see if there is already a topic for this
+    foreach ($topics AS &$topic) {
+      if ($topic['tid'] == $values['tid']) {
+        // and update it
+        $topic['topic_id'] = $values['govdelivery_topic'];
+        $updated = TRUE;
+      }
+    }
+  }
+  if (!$updated) {
+    $topics[] = [
+      'tid' => $values['tid'],
+      'topic_id' => $values['govdelivery_topic'],
+    ];
+    $updated = TRUE;
+  }
+
+  if ($updated) {
+    \Drupal::configFactory()->getEditable('govdelivery_taxonomy.settings')->set('topics', $topics)->save();
+  }
 }
