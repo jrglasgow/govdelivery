@@ -648,7 +648,7 @@ function govdelivery_taxonomy_form_taxonomy_term_form_submit (array &$form, \Dru
     // add the topic
     $topic_result = govdelivery_taxonomy_add_topic($term, $client);
     // add the categories
-    $category_result = govdelivery_taxonomy_categorize_topic($tid, $term->getVocabularyId(), $client);
+    $category_result = govdelivery_taxonomy_categorize_topic($values['tid'], $term->getVocabularyId(), $client);
     $values['govdelivery_topic'] = govdelivery_taxonomy_generate_topic_code($values['tid']);
     $updated = TRUE;
   }
