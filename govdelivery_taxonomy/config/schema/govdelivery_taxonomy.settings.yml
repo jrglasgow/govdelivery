@@ -11,8 +11,11 @@ govdelivery_taxonomy.settings:
     clientcode:
       label: 'GovDelivery DCM Client Account Code'
       type: string
-    server:
+    api_server:
       label: 'GovDelivery API URL (Without HTTPS://)'
+      type: string
+    public_server:
+      label: 'GovDelivery public URL (Without HTTPS://)'
       type: string
     drupalserver:
       label: 'Drupal Instance Base URL (Without HTTPS://)'

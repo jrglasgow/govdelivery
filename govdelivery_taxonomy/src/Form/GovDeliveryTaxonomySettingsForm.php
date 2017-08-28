@@ -121,11 +121,19 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       '#maxlength' => 20,
       '#required' => TRUE,
     );
-    $form['govdelivery_taxonomy']['server'] = array(
+    $form['govdelivery_taxonomy']['api_server'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('GovDelivery API domain'),
       '#description' => $this->t('This is usually stage-api.govdelivery.com or api.govdelivery.com'),
-      '#default_value' => $config->get('server'),
+      '#default_value' => $config->get('api_server'),
+      '#maxlength' => 100,
+      '#required' => TRUE,
+    );
+    $form['govdelivery_taxonomy']['public_server'] = array(
+      '#type' => 'textfield',
+      '#title' => $this->t('GovDelivery Public domain'),
+      '#description' => $this->t('This is usually stage.govdelivery.com or public.govdelivery.com'),
+      '#default_value' => $config->get('public_server'),
       '#maxlength' => 100,
       '#required' => TRUE,
     );
