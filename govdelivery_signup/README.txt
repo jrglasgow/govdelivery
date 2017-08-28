@@ -23,17 +23,19 @@ screen and enter relevant GovDelivery information to activate the module:
 
 1. GovDelivery Client Account Code
 
-2. GovDelivery Platform URL e.g. https://stage-admin.govdelivery.com or https://admin.govdelivery.com
+2. GovDelivery Platform URL e.g. https://stage.govdelivery.com or https://public.govdelivery.com
 
-After that the module must be made visible in desired areas of the website via the Blocks module in Drupal.
+After that the module must be made visible in desired areas of the website via
+the Blocks module in Drupal.
 
 
 OPERATING DETAILS
 -----------------
 
-Once activated, the GovDelivery Signup module displays a email signup box
+Once activated, the GovDelivery Signup module displays an email signup box
 on the website. Once the user enters their email, they are routed to the
-GD Quick Subscribe process for that client.
+GD Quick Subscribe process for that client, this allows the user to select from
+a list of topics to subscribe to.
 
 
 SUPPORT

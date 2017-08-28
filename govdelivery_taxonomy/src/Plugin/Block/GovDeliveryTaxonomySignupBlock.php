@@ -133,7 +133,8 @@ class GovDeliveryTaxonomySignupBlock extends BlockBase {
       '#type' => 'text_format',
       '#title' => $this->t('Enter a Description'),
       '#description' => $this->t('Text that will appear in the block with the list of topics to subscribe to.'),
-      '#default_value' => $config['description'],
+      '#default_value' => $config['description']['value'],
+      '#format' => $config['description']['format'],
       '#maxlength' => 100,
       '#required' => FALSE,
     );
