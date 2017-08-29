@@ -16,6 +16,9 @@ define('GOVDELIVERY_TAXONOMY_NONE_SELECTED', 0);
  */
 function govdelivery_taxonomy_add_topic($term, $client = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return FALSE;
+  }
   $drupalserver = $config->get('drupalserver');
   $tid = $term->id();
   $topic_code = govdelivery_taxonomy_generate_topic_code($tid);
@@ -73,6 +76,9 @@ XML;
  */
 function govdelivery_taxonomy_update_topic($term, $client = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return FALSE;
+  }
   $drupalserver = $config->get('drupalserver');
   $topic_code = govdelivery_taxonomy_generate_topic_code($term->id());
   $name = $term->getName();
@@ -195,6 +201,9 @@ function govdelivery_taxonomy_generate_category_code($vid) {
  */
 function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return [];
+  }
   $cid = 'govdelivery_taxonomy_categories:' . $config->get('server') . ':' . $config->get('clientcode');
 
   $data = NULL;
@@ -239,6 +248,9 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
  */
 function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return [];
+  }
   $cid = 'govdelivery_taxonomy_topics:' . $config->get('server') . ':' . $config->get('clientcode');
 
   $data = NULL;
@@ -288,6 +300,9 @@ function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
  */
 function govdelivery_taxonomy_get_category($cat_code, $client = NULL, $reset = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return [];
+  }
   $cid = implode(':', [
     'govdelivery_taxonomy_category',
     $config->get('server'),
@@ -433,6 +448,9 @@ function govdelivery_taxonomy_form_taxonomy_vocabulary_form_submit (array &$form
  */
 function govdelivery_taxonomy_create_category(&$values) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return FALSE;
+  }
   $client_code = $config->get('clientcode');
   $values['govdelivery_category'] = govdelivery_taxonomy_generate_category_code($values['vid']);
   $xml = <<<XML
@@ -481,6 +499,9 @@ XML;
  */
 function govdelivery_taxonomy_update_category(&$values) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
+  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+    return FALSE;
+  }
   $client_code = $config->get('clientcode');
   $values['govdelivery_category'] = govdelivery_taxonomy_generate_category_code($values['vid']);
   $xml = <<<XML
