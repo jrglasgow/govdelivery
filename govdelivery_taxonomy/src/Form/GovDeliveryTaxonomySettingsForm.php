@@ -145,7 +145,13 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       '#maxlength' => 100,
       '#required' => TRUE,
     );
-    $categories = govdelivery_taxonomy_get_categories(NULL);
+    if (empty($config->get('server') || empty($config->get('clientcode')))) {
+      $categories =  [];
+    }
+    else {
+      $categories = govdelivery_taxonomy_get_categories(NULL);
+    }
+
     if (!empty($categories)) {
       $form['govdelivery_taxonomy']['category'] = array(
         '#type' => 'fieldset',
