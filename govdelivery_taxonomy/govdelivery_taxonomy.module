@@ -65,7 +65,7 @@ XML;
     $contents = $body->getContents();
     return $contents;
   }
-  catch (\GuzzleHttp\Exception\ClientException $e) {
+  catch (Exception $e) {
     //\Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
     watchdog_exception('govdelivery', $e);
   }
@@ -128,7 +128,7 @@ XML;
     $contents = $body->getContents();
     return $contents;
   }
-  catch (\GuzzleHttp\Exception\ClientException $e) {
+  catch (Exception $e) {
     //\Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
     watchdog_exception('govdelivery', $e);
   }
@@ -228,7 +228,7 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
       $simplexml = new SimpleXMLElement($xml);
       $data = json_decode(json_encode($simplexml))->category;
     }
-    catch (\GuzzleHttp\Exception\ClientException $e) {
+    catch (Exception $e) {
       \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
       watchdog_exception('govdelivery', $e);
       $data = [];
@@ -280,7 +280,7 @@ function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
         $data[$topic->code] = $topic;
       }
     }
-    catch (\GuzzleHttp\Exception\ClientException $e) {
+    catch (Exception $e) {
       \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
       watchdog_exception('govdelivery', $e);
       $data = [];
@@ -332,7 +332,7 @@ function govdelivery_taxonomy_get_category($cat_code, $client = NULL, $reset = F
       $simplexml = new SimpleXMLElement($xml);
       $data = json_decode(json_encode($simplexml));
     }
-    catch (\GuzzleHttp\Exception\ClientException $e) {
+    catch (Exception $e) {
       \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
       watchdog_exception('govdelivery', $e);
       $data = [];
@@ -482,7 +482,7 @@ XML;
     $body = $response->getBody();
     $contents = $body->getContents();
   }
-  catch(\GuzzleHttp\Exception\ClientException $e) {
+  catch(Exception $e) {
     \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
     watchdog_exception('govdelivery', $e);
     $data = [];
@@ -533,7 +533,7 @@ XML;
     $body = $response->getBody();
     $contents = $body->getContents();
   }
-  catch(\GuzzleHttp\Exception\ClientException $e) {
+  catch(Exception $e) {
     \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
     watchdog_exception('govdelivery', $e);
     $data = [];
