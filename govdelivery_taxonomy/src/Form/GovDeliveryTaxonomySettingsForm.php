@@ -146,14 +146,14 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       '#required' => TRUE,
     );
     if (empty($config->get('username')) || empty($config->get('password'))) {
-      $categories =  [];dpm(__line__);
+      $categories =  [];
       $no_creds = TRUE;
     }
-    else {dpm(__line__);
+    else {
       $categories = govdelivery_taxonomy_get_categories(NULL);
       $no_creds = FALSE;
     }
-dpm($categories, '$categories');
+
     if (!empty($categories)) {
       $form['govdelivery_taxonomy']['category'] = array(
         '#type' => 'fieldset',
