@@ -7,7 +7,7 @@ govdelivery.admin_base:
     _permission: 'access administration pages'
 
 govdelivery_taxonomy.settings:
-  path: admin/config/govdelivery/taxonomy/settings
+  path: /admin/config/services/govdelivery/taxonomy
   defaults:
     _title: 'GovDelivery Taxonomy'
     _form: 'Drupal\govdelivery_taxonomy\Form\GovDeliveryTaxonomySettingsForm'
