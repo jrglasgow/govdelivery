@@ -16,7 +16,7 @@ define('GOVDELIVERY_TAXONOMY_NONE_SELECTED', 0);
  */
 function govdelivery_taxonomy_add_topic($term, $client = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return FALSE;
   }
   $drupalserver = $config->get('drupalserver');
@@ -47,7 +47,7 @@ XML;
   if (empty($client)) {
     $client = \Drupal::httpClient();
   }
-  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/topics.xml';
+  $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/topics.xml';
 
   try {
     $response = $client->request('POST', $url, [
@@ -76,7 +76,7 @@ XML;
  */
 function govdelivery_taxonomy_update_topic($term, $client = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return FALSE;
   }
   $drupalserver = $config->get('drupalserver');
@@ -110,7 +110,7 @@ XML;
   if (empty($client)) {
     $client = \Drupal::httpClient();
   }
-  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/topics/' . $topic_code . '.xml';
+  $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/topics/' . $topic_code . '.xml';
   try {
     $response = $client->request('PUT', $url, [
       'headers' => [
@@ -168,7 +168,7 @@ XML;
   if (empty($client)) {
     $client = \Drupal::httpClient();
   }
-  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/topics/' . govdelivery_taxonomy_generate_topic_code($tid) . '/categories.xml';
+  $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/topics/' . govdelivery_taxonomy_generate_topic_code($tid) . '/categories.xml';
 
   $response = $client->request('PUT', $url, [
     'headers' => [
@@ -201,10 +201,10 @@ function govdelivery_taxonomy_generate_category_code($vid) {
  */
 function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return [];
   }
-  $cid = 'govdelivery_taxonomy_categories:' . $config->get('server') . ':' . $config->get('clientcode');
+  $cid = 'govdelivery_taxonomy_categories:' . $config->get('api_server') . ':' . $config->get('clientcode');
 
   $data = NULL;
   if (($cache = \Drupal::cache()->get($cid)) && !$reset) {
@@ -215,11 +215,11 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
       if (empty($client)) {
         $client = \Drupal::httpClient();
       }
-      $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories.xml';
+      $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/categories.xml';
       $response = $client->request('GET', $url, [
         'auth' => [
           $config->get('username'),
-          $config->get('password')
+          $config->get('password'),
         ],
       ]);
 
@@ -229,7 +229,7 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
       $data = json_decode(json_encode($simplexml))->category;
     }
     catch (Exception $e) {
-      \Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+      //\Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
       watchdog_exception('govdelivery', $e);
       $data = [];
     }
@@ -248,10 +248,10 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
  */
 function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return [];
   }
-  $cid = 'govdelivery_taxonomy_topics:' . $config->get('server') . ':' . $config->get('clientcode');
+  $cid = 'govdelivery_taxonomy_topics:' . $config->get('api_server') . ':' . $config->get('clientcode');
 
   $data = NULL;
   if (($cache = \Drupal::cache()->get($cid)) && !$reset) {
@@ -262,7 +262,7 @@ function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
       if (empty($client)) {
         $client = \Drupal::httpClient();
       }
-      $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/topics.xml';
+      $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/topics.xml';
       $response = $client->request('GET', $url, [
         'auth' => [
           $config->get('username'),
@@ -300,12 +300,12 @@ function govdelivery_taxonomy_get_topics($client = NULL, $reset = FALSE) {
  */
 function govdelivery_taxonomy_get_category($cat_code, $client = NULL, $reset = FALSE) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return [];
   }
   $cid = implode(':', [
     'govdelivery_taxonomy_category',
-    $config->get('server'),
+    $config->get('api_server'),
     $config->get('clientcode'),
     $cat_code,
   ]);
@@ -319,7 +319,7 @@ function govdelivery_taxonomy_get_category($cat_code, $client = NULL, $reset = F
       if (empty($client)) {
         $client = \Drupal::httpClient();
       }
-      $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories/' . $cat_code . '.xml';
+      $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/categories/' . $cat_code . '.xml';
       $response = $client->request('GET', $url, [
         'auth' => [
           $config->get('username'),
@@ -448,7 +448,7 @@ function govdelivery_taxonomy_form_taxonomy_vocabulary_form_submit (array &$form
  */
 function govdelivery_taxonomy_create_category(&$values) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return FALSE;
   }
   $client_code = $config->get('clientcode');
@@ -465,7 +465,7 @@ function govdelivery_taxonomy_create_category(&$values) {
 XML;
 
   $client = \Drupal::httpClient();
-  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories.xml';
+  $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/categories.xml';
 
   try {
     $response = $client->request('POST', $url, [
@@ -499,7 +499,7 @@ XML;
  */
 function govdelivery_taxonomy_update_category(&$values) {
   $config = \Drupal::config('govdelivery_taxonomy.settings');
-  if (empty($config->get('server') || empty($config->get('clientcode')))) {
+  if (empty($config->get('username')) || empty($config->get('password'))) {
     return FALSE;
   }
   $client_code = $config->get('clientcode');
@@ -516,7 +516,7 @@ function govdelivery_taxonomy_update_category(&$values) {
 XML;
 
   $client = \Drupal::httpClient();
-  $url = 'https://' . $config->get('server') . '/api/account/' . $config->get('clientcode') . '/categories/' . $values['govdelivery_category'] . '.xml';
+  $url = 'https://' . $config->get('api_server') . '/api/account/' . $config->get('clientcode') . '/categories/' . $values['govdelivery_category'] . '.xml';
 
   try {
     $response = $client->request('PUT', $url, [

@@ -145,13 +145,15 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       '#maxlength' => 100,
       '#required' => TRUE,
     );
-    if (empty($config->get('server') || empty($config->get('clientcode')))) {
-      $categories =  [];
+    if (empty($config->get('username')) || empty($config->get('password'))) {
+      $categories =  [];dpm(__line__);
+      $no_creds = TRUE;
     }
-    else {
+    else {dpm(__line__);
       $categories = govdelivery_taxonomy_get_categories(NULL);
+      $no_creds = FALSE;
     }
-
+dpm($categories, '$categories');
     if (!empty($categories)) {
       $form['govdelivery_taxonomy']['category'] = array(
         '#type' => 'fieldset',
@@ -175,7 +177,9 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       $form['govdelivery_taxonomy']['category'] = array(
         '#type' => 'fieldset',
         '#title' => $this->t('GovDelivery Categories - no categories available'),
-        '#description' => $this->t('Topics/Terms will be able to be assigned to these categories. Only GovDelivery categories that "allow subscriptions" are available.'),
+        '#description' => $this->t('Topics/Terms will be able to be assigned to these categories. Only GovDelivery categories that "allow subscriptions" are available.') . (
+          !$no_creds ? '' : ' ' . $this->t('No credentials have been entered so we cannot check you account. After you have entered in username and password your categories will be listed here.')
+        ),
       );
     }
 
