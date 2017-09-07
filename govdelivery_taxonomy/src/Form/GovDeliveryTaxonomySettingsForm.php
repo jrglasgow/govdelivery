@@ -35,11 +35,14 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
 
     // process the categories so they are saved properly
     $categories = [];
-    foreach ($values['category'] AS $key => $value) {
-      if ($value) {
-        $categories[] = $key;
+    if (!empty($values['category'])) {
+      foreach ($values['category'] AS $key => $value) {
+        if ($value) {
+          $categories[] = $key;
+        }
       }
     }
+
     $config->set('category', $categories);
     unset($values['category']);
     
