@@ -2,6 +2,7 @@ govdelivery.tms_settings:
   route_name: govdelivery.tms_settings
   base_route: govdelivery.tms_settings
   title: 'Settings'
+  
 govdelivery.tms_test_messages:
   route_name: govdelivery.tms_test_messages
   base_route: govdelivery.tms_settings

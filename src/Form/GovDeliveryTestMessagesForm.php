@@ -7,13 +7,15 @@
 
 namespace Drupal\govdelivery\Form;
 
-use Drupal\Core\Form\ConfigFormBase;
+use Drupal\govdelivery\Plugin\Mail\GovDeliveryMailSystem;
+use Drupal\Core\Form\FormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Element;
+use Drupal\Core\Logger\LoggerChannelFactory;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
 
-class GovDeliveryTestMessagesForm extends ConfigFormBase {
+class GovDeliveryTestMessagesForm extends FormBase {
   /**
    * {@inheritdoc}
    */
@@ -25,80 +27,86 @@ class GovDeliveryTestMessagesForm extends ConfigFormBase {
    * {@inheritdoc}
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
-    /*
-    $config = $this->config('saml_sp.settings');
-    $values = $form_state->getValues();
-    $this->configRecurse($config, $values['contact'], 'contact');
-    $this->configRecurse($config, $values['organization'], 'organization');
-    $this->configRecurse($config, $values['security'], 'security');
-    $config->set('strict', $values['strict']);
-    $config->set('debug', $values['debug']);
-    $config->set('key_location', $values['key_location']);
-    $config->set('cert_location', $values['cert_location']);
-    $config->set('entity_id', $values['entity_id']);
+    $recipients = $email = $form_state->getValues()['email'];
 
-    $config->save();
-
-    if (method_exists($this, '_submitForm')) {
-      $this->_submitForm($form, $form_state);
+    // Send message.
+    if (isset($recipients) && !empty($recipients)) {
+      $this->send_test_message($recipients);
+      /*
+      $from = $postinfo['values']['govdelivery_test_settings']['from'];
+      // Pass on the list to be sent.
+      if (!empty($from)) {
+        $status = govdelivery_send_test_message($recipients, $from);
+      }
+      else {
+        $status = govdelivery_send_test_message($recipients);
+      }
+      $mailManager = \Drupal::service('plugin.manager.mail')->mail('example', 'notice', $account->mail, $langcode, $params);/**/
+      //$params = [];
+      //$account = \Drupal::currentUser();
+      //$mailManager = \Drupal::service('plugin.manager.mail')->mail('govdelivery', 'test_message', $recipients, $account->getPreferredLangcode(), $params);
     }
-    */
 
-    parent::submitForm($form, $form_state);
+  }
+  
+  /**
+   * Initiate the sending of the test message.
+   */
+  function send_test_message($recipients) {
+    $mail_config = $this->configFactory->getEditable('system.mail');
+    $gdConfig = \Drupal::config('govdelivery.tms_settings');
+    $account = \Drupal::currentUser();
+    // If module is off, send the test message with GovDelivery by temporarily overriding.
+    if (!$gdConfig->get('enabled')) {
+      $original = $mail_config->get('interface');
+      $mail_system = 'GovDeliveryMailSystem';
+      $mail_config->set('interface.default', $mail_system)->save();
+    }
+    \Drupal::service('plugin.manager.mail')->mail('govdelivery', 'test_message', $recipients, $account->getPreferredLangcode(), $params);
+    if (!$gdConfig->get('enabled')) {
+      $mail_config->set('interface', $original)->save();
+    }
+    drupal_set_message(t('A test e-mail has been sent to @email via GovDelivery. You may want to check the log for any error messages.', ['@email' => $recipients]));
+
+    /*
+    if (\Drupal::config('govdelivery.tms_settings')->get('enabled')) {
+      dpm('govdelivery is current drupal mail system');
+      $params = [];
+      $account = \Drupal::currentUser();
+      $mailManager = \Drupal::service('plugin.manager.mail')->mail('govdelivery', 'test_message', $recipients, $account->getPreferredLangcode(), $params);
+      return;
+    }
+    dpm('govdelivery is NOT current drupal mail system');
+    $replacements = [
+      '@site_name' => \Drupal::config('system.site')->get('name'),
+    ];
+    $message = [
+      'to' => $recipients,
+    ];
+    // get the message from hook_mail().
+    govdelivery_mail('ignored key', $message, array());
+    $key = md5(print_r($message, TRUE) . microtime() . strval(rand()));
+    
+    //govdelivery_process_message($key, $message);
+    $logger = LoggerChannelFactoryInterface::get('govdelivery');
+    $mailSystem = new GovDeliveryMailSystem([], NULL, NULL, $logger);
+    $message = $mailSystem->format($message);
+    $mailSystem->mail($message);
+    /*
+    if (govdelivery_send_message($message)) {
+      drupal_set_message(t('Your test message has been sent.'));
+    }
+    else {
+      drupal_set_message(t('Unable to send test message, please check logs.'));
+    }*/
   }
 
   /**
    * {@inheritdoc}
    */
+  /*
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    /*
-    // ensure the cert and key files are provided and exist in the system if
-    // signed or encryption options require them
-    $values = $form_state->getValues();
-    if (
-      $values['security']['authnRequestsSigned'] ||
-      $values['security']['logoutRequestSigned'] ||
-      $values['security']['logoutResponseSigned'] ||
-      $values['security']['wantNameIdEncrypted'] ||
-      $values['security']['signMetaData']
-    ) {
-      foreach (['key_location', 'cert_location'] AS $key) {
-        if (empty($values[$key])) {
-          $form_state->setError($form[$key], $this->t('The %field must be provided.', array('%field' => $form[$key]['#title'])));
-        }
-        else if (!file_exists($values[$key])) {
-          $form_state->setError($form[$key], $this->t('The %input file does not exist.', array('%input' => $values[$key])));
-        }
-      }
-    }
-    */
-  }
 
-  /**
-   * recursively go through the set values to set the configuration
-   */
-  protected function configRecurse($config, $values, $base = '') {
-    foreach ($values AS $var => $value) {
-      if (!empty($base)) {
-        $v = $base . '.' . $var;
-      }
-      else {
-        $v = $var;
-      }
-      if (!is_array($value)) {
-        $config->set($v, $value);
-      }
-      else {
-        $this->configRecurse($config, $value, $v);
-      }
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function getEditableConfigNames() {
-    return ['govdelivery.settings'];
   }
 
   /**
@@ -106,10 +114,15 @@ class GovDeliveryTestMessagesForm extends ConfigFormBase {
    */
   public function buildForm(array $form = [], FormStateInterface $form_state) {
     $config = $this->config('govdelivery.settings');
+    $form['email'] = array(
+      '#type' => 'email',
+      '#title' => $this->t('Email address to send messages to.'),
+    );
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => $this->t('Send test message'),
+    );
 
-
-
-
-    return parent::buildForm($form, $form_state);
+    return $form;
   }
 }

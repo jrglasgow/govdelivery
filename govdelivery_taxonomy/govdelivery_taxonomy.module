@@ -230,7 +230,13 @@ function govdelivery_taxonomy_get_categories($client = NULL, $reset = FALSE) {
     }
     catch (Exception $e) {
       //\Drupal::logger('govdelivery')->error('the following error occurred: <pre>!error</pre>', array('@error' => print_r($e, TRUE)));
+
       watchdog_exception('govdelivery', $e);
+      \Drupal::logger('govdelivery')->error('Request was made HTTP GET @url : <br/>The following error response was returned: <pre>@response</pre>.', [
+        '@response' => $e->getResponse()->getBody()->getContents(),
+        '@user' => $config->get('username'),
+        '@url' => $url,
+      ]);
       $data = [];
     }
 

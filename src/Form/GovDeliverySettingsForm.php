@@ -36,8 +36,26 @@ class GovDeliverySettingsForm extends ConfigFormBase {
     $config->set('override_from', $values['override_from']);
     $config->set('max_bid', $values['max_bid']);
     $config->set('external_cron_interval', $values['external_cron_interval']);
+    $config->set('allow_html', $values['allow_html']);
 
     $config->save();
+
+    // Set as default mail system if module is enabled.
+    $mail_config = $this->configFactory->getEditable('system.mail');
+    if ($config->get('enabled')) {
+      if ($mail_system != 'GovDeliveryMailSystem') {
+        $config->set('prev_mail_system', $mail_system);
+      }
+      $mail_system = 'GovDeliveryMailSystem';
+      $mail_config->set('interface.default', $mail_system)->save();
+    }
+    else {
+      $default_system_mail = 'php_mail';
+      //$mail_config = $this->configFactory->getEditable('system.mail');
+      $default_interface = ($mail_config->get('prev_mail_system')) ? $mail_config->get('prev_mail_system') : $default_system_mail;
+      $mail_config->set('interface.default', $default_interface)
+        ->save();
+    }
 
     if (method_exists($this, '_submitForm')) {
       $this->_submitForm($form, $form_state);
@@ -87,6 +105,7 @@ class GovDeliverySettingsForm extends ConfigFormBase {
    */
   public function buildForm(array $form = [], FormStateInterface $form_state) {
     $config = $this->config('govdelivery.tms_settings');
+    /*
     $accounts = $config->get('accounts');
 
     $account_fieldset = array(
@@ -94,39 +113,40 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#title' => $this->t('Mail account'),
       '#tree' => TRUE,
     );
+    
     // TODO figure out what this account stuff is about, why would we want
     // multiple account information and why are the fields hidden?
     if (!empty($accounts) && is_array($accounts)) {
       foreach ($govdelivery_tms_settings['accounts'] as $username => $account_settings) {
-        $account_fieldset[$username . '%###%fromname'] = array(
+        $account_fieldset['fromname'] = array(
           '#type' => "textfield",
           '#title' => t('From name'),
           '#default_value' => check_plain((!empty($account_settings['fromname']) ? $account_settings['fromname'] : '')),
-          '#description' => t('The name displayed in the From field of the received email. E.G. John Smith.'),
+          '#description' => $this->t('The name displayed in the From field of the received email. E.G. John Smith.'),
         );
-        $account_fieldset[$username . '%###%username'] = array(
+        $account_fieldset['username'] = array(
           '#type' => "hidden",
-          '#title' => t('Username'),
+          '#title' => $this->t('Username'),
           // Hardcoded username
-          '#default_value' => t('gd_drupal_tms'),
+          '#default_value' => 'gd_drupal_tms',
         );
-        $account_fieldset[$username . '%###%password'] = array(
+        $account_fieldset['password'] = array(
           '#type' => "hidden",
-          '#title' => t('Password'),
-          '#default_value' => t('gd_drupal_tms'),
+          '#title' => $this->t('Password'),
+          '#default_value' => 'gd_drupal_tms',
         );
       }
     }
     else {
       $account_fieldset['fromname'] = array(
         '#type' => "textfield",
-        '#title' => t('From name'),
-        '#description' => t('The name displayed in the From field of the received email. E.G. John Smith.'),
+        '#title' => $this->t('From name'),
+        '#description' => $this->t('The name displayed in the From field of the received email. E.G. John Smith.'),
       );
       $account_fieldset['username'] = array(
         '#type' => "hidden",
-        '#title' => t('Username'),
-        '#value' => t('gd_drupal_tms'),
+        '#title' => $this->t('Username'),
+        '#value' => 'gd_drupal_tms',
       );
       $account_fieldset['password'] = array(
         '#type' => "hidden",
@@ -134,7 +154,7 @@ class GovDeliverySettingsForm extends ConfigFormBase {
         '#value' => t('gd_drupal_tms'),
       );
     }
-
+    */
     // Commenting out subscription form for now until usage is clearer.
     // $subscription_fieldset = array(
     //   '#type' => 'fieldset',
@@ -174,6 +194,7 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#tree' => TRUE,
       'accounts' => $account_fieldset,
     );
+
     // 'default_username' => array(
     //   '#type' => "textfield",
     //   '#title' => 'Default mail username',
@@ -197,7 +218,7 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#default_value' => (boolean) $config->get('enabled'),
       '#title' => t('Use TMS for Outbound Mail'),
       '#options' => $boole_options,
-      '#description' => t('If this option is enabled, emails from your Drupal site will be sent using GovDelivery\'s Targeted Messaging System (TMS). If it is disabled, emails we be sent using Drupal\'s standard SMTP-based email system.'),
+      '#description' => t('If this option is enabled, emails from your Drupal site will be sent using GovDelivery\'s Targeted Messaging System (TMS). If it is disabled, emails we be sent using Drupal\'s standard php_mail system.'),
     );
     $form['govdelivery_tms_settings']['queue'] = array(
       '#type' => 'select',
@@ -230,7 +251,7 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#title' => t('External cron interval (in seconds)'),
       '#default_value' => $config->get('external_cron_interval'),
     );
-
+    dpm($form, '$form');
     return parent::buildForm($form, $form_state);
   }
 }

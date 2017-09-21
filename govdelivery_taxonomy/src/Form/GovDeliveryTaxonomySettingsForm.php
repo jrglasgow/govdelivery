@@ -116,7 +116,7 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       '#default_value' => $config->get('password'),
       '#maxlength' => 25,
       '#required' => !empty($config->get('password')) ? FALSE : TRUE,
-    );
+    );dpm($config->get('password'), 'password');
     $form['govdelivery_taxonomy']['clientcode'] = array(
       '#type' => 'textfield',
       '#title' => $this->t('GovDelivery DCM Client Account Code'),
@@ -153,9 +153,9 @@ class GovDeliveryTaxonomySettingsForm extends ConfigFormBase {
       $no_creds = TRUE;
     }
     else {
-      $categories = govdelivery_taxonomy_get_categories(NULL);
+      $categories = govdelivery_taxonomy_get_categories(NULL, TRUE);
       $no_creds = FALSE;
-    }
+    }dpm($categories, '$categories');
 
     if (!empty($categories)) {
       $form['govdelivery_taxonomy']['category'] = array(

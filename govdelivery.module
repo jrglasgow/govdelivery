@@ -9,11 +9,9 @@
  */
 function govdelivery_mail($key, &$message, $params) {
   $message['subject'] = 'GovDelivery test message';
-  if (isset($_SERVER['HTTP_HOST'])) {
-    $_SERVER['HTTP_HOST'] = strtolower($_SERVER['HTTP_HOST']);
-    if (drupal_valid_http_host($_SERVER['HTTP_HOST'])) {
-      $message['subject'] = 'GovDelivery test message: ' . $_SERVER['HTTP_HOST'] . ' ' . time() . ' ' . rand(1, 10000);
-    }
+  if ($host = govdelivery_trusted_host()) {
+    $host = strtolower($host);
+    $message['subject'] = 'GovDelivery test message: ' . $host . ' ' . time() . ' ' . rand(1, 10000);
   }
 
   // Commenting out as it is causing problems sending body.
@@ -31,6 +29,20 @@ function govdelivery_mail($key, &$message, $params) {
   $message['body'][] = "<p>This is a test message from the GovDelivery system</p>";
   $message['body'][] = "<ol><li>Item 1</li><li>Item 2</li><li>Item 3</li></ol>";
   $message['body'][] = "</html>";
+}
+
+/**
+ * Determine if a host to which the request is made is trusted
+ */
+function govdelivery_trusted_host() {
+  $request = \Drupal::request();
+  $host_patterns = $request->getTrustedHosts();
+  if (PHP_SAPI !== 'cli' && !empty($host_patterns)) {
+    if (static::setupTrustedHosts($request, $host_patterns) === FALSE) {
+      return FALSE;
+    }
+  }
+  return $request->getHttpHost();
 }
 
 /**
@@ -499,10 +511,10 @@ function govdelivery_filter_email($address) {
 function govdelivery_process_message($key, $message) {
   // Check preferences.
   if (is_array($message)) {
-    $govdelivery_tms_settings = variable_get('govdelivery_tms_settings', array());
+    $tms_settings = \Drupal::config('govdelivery.tms_settings');
     $send_success = FALSE;
     // Attempt to send immediately.
-    if (isset($govdelivery_tms_settings['queue']) && !$govdelivery_tms_settings['queue']) {
+    if (!$tms_settings->get('queue')) {
       $send_success = govdelivery_send_message($message);
       if ($send_success) {
         watchdog('govdelivery', 'Successfully sent a message immediately.', array(), WATCHDOG_INFO);
@@ -614,12 +626,12 @@ function govdelivery_subscriber_api_add_subscriber($email, $title = NULL, $topic
 }
 
 /**
- * Called by the queue processor to send a message from the queued.
+ * Called by the queue processor to send a message from the queue.
  *
  * Also called to send immediately.
  */
 function govdelivery_send_message($message) {
-  $govdelivery_tms_settings = variable_get('govdelivery_tms_settings', array());
+  $tms_settings = \Drupal::config('govdelivery.tms_settings');
   $sendsuccess = FALSE;
 
   # Get list of recipients.
@@ -647,22 +659,15 @@ function govdelivery_send_message($message) {
     }
   }
 
-  # Check which account is mapped.
-  $account = $govdelivery_tms_settings['default_username'];
-  if (!isset($account) || empty($account)) {
-    watchdog('govdelivery', "No default account specified.  Check 'Default mail username' in admin/config/govdelivery/settings.", NULL, WATCHDOG_ERROR);
-    return FALSE;
-  }
-
-  $from_address = $govdelivery_tms_settings['accounts'][$account]['fromname'];
-  if (isset($govdelivery_tms_settings['override_from']) && !empty($govdelivery_tms_settings['override_from'])) {
+  $from_address = \Drupal::config('system.site')->get('name');
+  if ($tms_settings->get('override_from')) {
     if (!empty($message['from'])) {
       $from_address = $message['from'];
     }
   }
 
   $message_data = array(
-    'body' => $message['body'],
+    'body' => is_array($message['body']) ? implode("\n", $message['body']) : $message['body'],
     'from_name' => $from_address,
     'subject' => $message["subject"],
     'recipients' => array()
@@ -671,26 +676,39 @@ function govdelivery_send_message($message) {
     $message_data['recipients'][] = array('email' => $recipient);
   }
   $data = json_encode($message_data);
-  $auth_token = $govdelivery_tms_settings['auth_token'];
+  $auth_token = $tms_settings->get('auth_token');
   $options = array(
     'method' => 'POST',
     'data' => $data,
     'timeout' => 15,
     'headers' => array('Content-Type' => 'application/json', 'X-AUTH-TOKEN' => $auth_token),
   );
+  $options = [
+    'json' => $message_data,
+    'headers' => ['X-AUTH-TOKEN' => $auth_token],
+  ];
+  dpm($options, '$options');
+  $server = $tms_settings->get('server');
+  $url = $server . '/messages/email';
+  //$result = drupal_http_request($server . '/messages/email', $options);
+  $client = \Drupal::httpClient();
+  try {
+    $result = $client->post($url, $options);
+  //  dpm($result, '$result');
 
-  $server = $govdelivery_tms_settings['server'];
-  $result = drupal_http_request($server . '/messages/email', $options);
-  // HTTP code for this?
-  if ($result->code == 200 or $result->code == 201) {
-    $sendsuccess = TRUE;
+    // HTTP code for this?
+    if ($result->getStatusCode() == 200 or $result->getStatusCode() == 201) {
+      return TRUE;
+    }
   }
-  else {
-    watchdog('govdelivery', 'Exception: Error in sending email: %error', array('%error' => $result->code), WATCHDOG_ERROR);
-    $sendsuccess = FALSE;
+  catch (Exception $e) {
+    watchdog_exception('govdelivery', $e);
+    \Drupal::logger('govdelivery')->error('Request was made HTTP GET @url : <br/>The following error response was returned: <pre>@response</pre>.', [
+      '@response' => $e->getResponse()->getBody()->getContents(),
+      '@url' => $url,
+    ]);
+    $data = [];
   }
-
-  return $sendsuccess;
 }
 
 /**
