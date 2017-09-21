@@ -357,7 +357,7 @@ function govdelivery_taxonomy_get_category($cat_code, $client = NULL, $reset = F
  * Implements hook_form_alter().
  */
 function govdelivery_taxonomy_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
-  //dpm($form_id, __function__);
+
 }
 
 /**

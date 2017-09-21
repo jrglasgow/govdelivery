@@ -6,39 +6,6 @@
  */
 
 /**
- * Handle test settings form submission.
- */
-function govdelivery_test_settings_submit($form, $postinfo) {
-  $recipients = $postinfo['values']['govdelivery_test_settings']['recipients'];
-  // Send message.
-  if (isset($recipients) && !empty($recipients)) {
-    $from = $postinfo['values']['govdelivery_test_settings']['from'];
-    // Pass on the list to be sent.
-    if (!empty($from)) {
-      $status = govdelivery_send_test_message($recipients, $from);
-    }
-    else {
-      $status = govdelivery_send_test_message($recipients);
-    }
-  }
-  drupal_set_message(t('Your test message has been sent.'));
-}
-
-/**
- * Send a test message.
- *
- * @param string $send_to
- *   Email address to send to.
- *
- * @return array
- *   Email data.
- */
-function govdelivery_send_test_message($send_to, $from = NULL) {
-  dpm(__function_);
-  //return drupal_mail('govdelivery', 'test_id', $send_to, language_default(), array(), $from, TRUE);
-}
-
-/**
  * Signup an email address for a specified list.
  *
  * Pass any known questions and answers along.

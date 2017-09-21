@@ -251,7 +251,7 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#title' => t('External cron interval (in seconds)'),
       '#default_value' => $config->get('external_cron_interval'),
     );
-    dpm($form, '$form');
+
     return parent::buildForm($form, $form_state);
   }
 }

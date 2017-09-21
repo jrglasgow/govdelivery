@@ -89,7 +89,7 @@ class GovDeliveryMailSystem implements MailInterface, ContainerFactoryPluginInte
    * @return bool
    *   Mail is processed.
    */
-  public function mail(array $message) {dpm(__function__, __class__);
+  public function mail(array $message) {
     $key = md5(print_r($message, TRUE) . microtime() . strval(rand()));
     //govdelivery_process_message($key, $message);
     return $this->send_message($message);
@@ -161,7 +161,6 @@ class GovDeliveryMailSystem implements MailInterface, ContainerFactoryPluginInte
     $client = \Drupal::httpClient();
     try {
       $result = $client->post($url, $options);
-    //  dpm($result, '$result');
 
       // HTTP code for this?
       if ($result->getStatusCode() == 200 or $result->getStatusCode() == 201) {

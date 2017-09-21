@@ -67,38 +67,6 @@ class GovDeliveryTestMessagesForm extends FormBase {
       $mail_config->set('interface', $original)->save();
     }
     drupal_set_message(t('A test e-mail has been sent to @email via GovDelivery. You may want to check the log for any error messages.', ['@email' => $recipients]));
-
-    /*
-    if (\Drupal::config('govdelivery.tms_settings')->get('enabled')) {
-      dpm('govdelivery is current drupal mail system');
-      $params = [];
-      $account = \Drupal::currentUser();
-      $mailManager = \Drupal::service('plugin.manager.mail')->mail('govdelivery', 'test_message', $recipients, $account->getPreferredLangcode(), $params);
-      return;
-    }
-    dpm('govdelivery is NOT current drupal mail system');
-    $replacements = [
-      '@site_name' => \Drupal::config('system.site')->get('name'),
-    ];
-    $message = [
-      'to' => $recipients,
-    ];
-    // get the message from hook_mail().
-    govdelivery_mail('ignored key', $message, array());
-    $key = md5(print_r($message, TRUE) . microtime() . strval(rand()));
-    
-    //govdelivery_process_message($key, $message);
-    $logger = LoggerChannelFactoryInterface::get('govdelivery');
-    $mailSystem = new GovDeliveryMailSystem([], NULL, NULL, $logger);
-    $message = $mailSystem->format($message);
-    $mailSystem->mail($message);
-    /*
-    if (govdelivery_send_message($message)) {
-      drupal_set_message(t('Your test message has been sent.'));
-    }
-    else {
-      drupal_set_message(t('Unable to send test message, please check logs.'));
-    }*/
   }
 
   /**
