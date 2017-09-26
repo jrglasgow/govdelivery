@@ -1,6 +1,4 @@
 queue: false
-cron_tms: false
 override_from: false
 max_bid: 5
-external_cron_interval: 120
 enabled: false

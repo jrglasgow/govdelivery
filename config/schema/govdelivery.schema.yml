@@ -29,10 +29,6 @@ govdelivery.tms_settings:
       label: 'Queue Mail for high volume'
       description: 'If this option is enabled, messages will be placed in a queue for delivery rather than be sent immediately. (Messages that fail to send will be queued anyway for later delivery.)'
       type: boolean
-    cron_tms:
-      type: boolean
-      label: 'Messages cron'
-      description: 'Will automatically resend the messages queue when cron runs.'
     override_from:
       type: boolean
       label: 'Override the From address on outgoing messages and failback on the predefined From address in this module'
@@ -40,6 +36,3 @@ govdelivery.tms_settings:
     max_bid:
       type: integer
       label: 'Maximum bins used with queue asynchronous processing'
-    external_cron_interval:
-      type: integer
-      label: 'External cron interval (in seconds)'

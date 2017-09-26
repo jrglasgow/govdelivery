@@ -227,13 +227,6 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#options' => $boole_options,
       '#description' => t('If this option is enabled, messages will be placed in a queue for delivery rather than be sent immediately. (Messages that fail to send will be queued anyway for later delivery.)'),
     );
-    $form['govdelivery_tms_settings']['cron_tms'] = array(
-      '#type' => 'select',
-      '#default_value' => (boolean) $config->get('cron_tms'),
-      '#title' => t('Messages cron'),
-      '#options' => $boole_options,
-      '#description' => t('Will automatically resend the messages queue when cron runs.'),
-    );
     $form['govdelivery_tms_settings']['override_from'] = array(
       '#type' => 'select',
       '#default_value' => (boolean) $config->get('override_from'),
@@ -245,11 +238,6 @@ class GovDeliverySettingsForm extends ConfigFormBase {
       '#type' => 'textfield',
       '#title' => t('Maximum bins used with queue asynchronous processing'),
       '#default_value' => $config->get('max_bid'),
-    );
-    $form['govdelivery_tms_settings']['external_cron_interval'] = array(
-      '#type' => 'textfield',
-      '#title' => t('External cron interval (in seconds)'),
-      '#default_value' => $config->get('external_cron_interval'),
     );
 
     return parent::buildForm($form, $form_state);
