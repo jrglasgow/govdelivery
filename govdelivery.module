@@ -46,26 +46,6 @@ function govdelivery_trusted_host() {
 }
 
 /**
- * Implements hook_cron().
- *
- * @todo This is likely broken or limited.
- */
-function govdelivery_cron() {
-  $govdelivery_subscription_settings = variable_get('govdelivery_subscription_settings', NULL);
-  $govdelivery_tms_settings = variable_get('govdelivery_tms_settings', array());
-
-  // If subscriptions cron is Enabled.
-  if (isset($govdelivery_subscription_settings['cron_subscriptions']) && $govdelivery_subscription_settings['cron_subscriptions']) {
-    $messages_sent = govdelivery_process_subscription_queue();
-  }
-
-  // If subscriptions cron is Enabled.
-  if (isset($govdelivery_tms_settings['cron_tms']) && $govdelivery_tms_settings['cron_tms']) {
-    $items_sent = govdelivery_process_message_queue();
-  }
-}
-
-/**
  * Implements hook_nagios_info().
  */
 function govdelivery_nagios_info() {
@@ -73,19 +53,6 @@ function govdelivery_nagios_info() {
     'name' => 'GovDelivery',
     'id' => 'GovDelivery',
   );
-}
-
-/**
- * Get the count from a particular queue.
- */
-function _govdelivery_get_queue_count($table) {
-  try {
-    $result = db_select($table)->countQuery()->execute()->fetchField();
-    return $result;
-  }
-  catch (Exception $e) {
-    return FALSE;
-  }
 }
 
 /**
@@ -531,6 +498,49 @@ function govdelivery_process_message($key, $message) {
   }
   else {
     watchdog('govdelivery', 'Bad message data got to the process message function.', array(), WATCHDOG_WARNING);
+  }
+}
+
+/**
+ * Actually attempt to send the message.
+ *
+ * @param Array $message
+ *
+ * @return Boolean whether or not the attempt was successful
+ */
+function govdelivery_send_message($message) {
+  $tms_settings = \Drupal::config('govdelivery.tms_settings');
+  $data = json_encode($message_data);
+  $auth_token = $tms_settings->get('auth_token');
+  $options = array(
+    'method' => 'POST',
+    'data' => $data,
+    'timeout' => 15,
+    'headers' => array('Content-Type' => 'application/json', 'X-AUTH-TOKEN' => $auth_token),
+  );
+  $options = [
+    'json' => $message,
+    'headers' => ['X-AUTH-TOKEN' => $auth_token],
+  ];
+  $server = $tms_settings->get('server');
+  $url = $server . '/messages/email';
+
+  $client = \Drupal::httpClient();
+  try {
+    $result = $client->post($url, $options);
+
+    // HTTP code for this?
+    if ($result->getStatusCode() == 200 or $result->getStatusCode() == 201) {
+      return TRUE;
+    }
+  }
+  catch (Exception $e) {
+    watchdog_exception('govdelivery', $e);
+    \Drupal::logger('govdelivery')->error('Request was made HTTP GET @url : <br/>The following error response was returned: <pre>@response</pre>.', [
+      '@response' => $e->getResponse()->getBody()->getContents(),
+      '@url' => $url,
+    ]);
+    return FALSE;
   }
 }
 

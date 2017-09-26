@@ -90,10 +90,7 @@ class GovDeliveryMailSystem implements MailInterface, ContainerFactoryPluginInte
    *   Mail is processed.
    */
   public function mail(array $message) {
-    $key = md5(print_r($message, TRUE) . microtime() . strval(rand()));
-    //govdelivery_process_message($key, $message);
     return $this->send_message($message);
-    return TRUE;
   }
 
   /**
@@ -117,9 +114,9 @@ class GovDeliveryMailSystem implements MailInterface, ContainerFactoryPluginInte
       }
     }
     else {
-      $tolist = explode(',', $message["to"]);
+      $tolist = explode(',', $message['to']);
       if (is_array($tolist)) {
-        $filtered_list = array_map("govdelivery_filter_email", $tolist);
+        $filtered_list = array_map('govdelivery_filter_email', $tolist);
         $recipients = array_merge($recipients, $filtered_list);
       }
       else {
@@ -143,37 +140,20 @@ class GovDeliveryMailSystem implements MailInterface, ContainerFactoryPluginInte
     foreach ($recipients as $recipient) {
       $message_data['recipients'][] = array('email' => $recipient);
     }
-    $data = json_encode($message_data);
-    $auth_token = $this->gdtmsConfig->get('auth_token');
-    $options = array(
-      'method' => 'POST',
-      'data' => $data,
-      'timeout' => 15,
-      'headers' => array('Content-Type' => 'application/json', 'X-AUTH-TOKEN' => $auth_token),
-    );
-    $options = [
-      'json' => $message_data,
-      'headers' => ['X-AUTH-TOKEN' => $auth_token],
-    ];
-    $server = $this->gdtmsConfig->get('server');
-    $url = $server . '/messages/email';
-    //$result = drupal_http_request($server . '/messages/email', $options);
-    $client = \Drupal::httpClient();
-    try {
-      $result = $client->post($url, $options);
 
-      // HTTP code for this?
-      if ($result->getStatusCode() == 200 or $result->getStatusCode() == 201) {
-        return TRUE;
-      }
+    if ($this->gdtmsConfig->get('queue')) {
+      // new messages need to be queued
+      $queue = \Drupal::queue('govdelivery_tms_mailsystem', TRUE);
+      $queue->createQueue();
+      $queue->createItem($message_data);
+      return TRUE;
     }
-    catch (Exception $e) {
-      watchdog_exception('govdelivery', $e);
-      \Drupal::logger('govdelivery')->error('Request was made HTTP GET @url : <br/>The following error response was returned: <pre>@response</pre>.', [
-        '@response' => $e->getResponse()->getBody()->getContents(),
-        '@url' => $url,
-      ]);
-      return FALSE;
+    // no queuing, unless fail
+    if (!govdelivery_send_message($message_data)) {
+      // failed to send the message immediately, queue the message
+      $queue = \Drupal::queue('govdelivery_tms_mailsystem', TRUE);
+      $queue->createQueue();
+      $queue->createItem($message_data);
     }
   }
 }
