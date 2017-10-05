@@ -38,7 +38,7 @@ function govdelivery_trusted_host() {
   $request = \Drupal::request();
   $host_patterns = $request->getTrustedHosts();
   if (PHP_SAPI !== 'cli' && !empty($host_patterns)) {
-    if (static::setupTrustedHosts($request, $host_patterns) === FALSE) {
+    if (DrupalKernel::setupTrustedHosts($request, $host_patterns) === FALSE) {
       return FALSE;
     }
   }
